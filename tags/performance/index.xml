@@ -1,0 +1,265 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Performance on Boxcounter的烂笔头</title>
+    <link>http://boxcounter.com/tags/performance/</link>
+    <description>Recent content in Performance on Boxcounter的烂笔头</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <lastBuildDate>Sat, 01 Aug 2015 00:00:00 +0000</lastBuildDate>
+    <atom:link href="http://boxcounter.com/tags/performance/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Android下列表视图的性能优化</title>
+      <link>http://boxcounter.com/technique/2015-08-01-Android%E4%B8%8B%E5%88%97%E8%A1%A8%E8%A7%86%E5%9B%BE%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/</link>
+      <pubDate>Sat, 01 Aug 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2015-08-01-Android%E4%B8%8B%E5%88%97%E8%A1%A8%E8%A7%86%E5%9B%BE%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/</guid>
+      <description>
+
+&lt;h2 id=&#34;前言:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;前言&lt;/h2&gt;
+
+&lt;p&gt;Android下使用列表控件，如&lt;code&gt;RecyclerView&lt;/code&gt;和&lt;code&gt;ListView&lt;/code&gt;，很容易遇到滚动不流畅的问题。本文记录我的一次性能优化过程。&lt;/p&gt;
+
+&lt;h2 id=&#34;常见范式:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;常见范式&lt;/h2&gt;
+
+&lt;p&gt;我们经常这样使用列表控件：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;（使用&lt;code&gt;ListView&lt;/code&gt;）重写&lt;code&gt;Adapter.getView()&lt;/code&gt;，在其中创建或重用View和ViewHolder，将业务数据结构显示到View中。&lt;/li&gt;
+&lt;li&gt;（使用&lt;code&gt;RecylerView&lt;/code&gt;）重写&lt;code&gt;Adapter.onCreateViewHolder()&lt;/code&gt;和&lt;code&gt;Adapter.onBindViewHolder()&lt;/code&gt;，在前者中创建View和ViewHolder，在后者中将业务数据结构显示到View中。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;这个范式用了一种优化技术：View重用。避免了频繁的create view和find view过程，这两个过程都是很耗时的。但仅这一种优化手段不足以解决所有的性能问题。&lt;/p&gt;
+
+&lt;h2 id=&#34;优化过程:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;优化过程&lt;/h2&gt;
+
+&lt;p&gt;接下来，我将基于一个实际项目的简化版来说明如何进行优化。&lt;/p&gt;
+
+&lt;h3 id=&#34;一-减少overdraw:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;一、减少Overdraw&lt;/h3&gt;
+
+&lt;p&gt;Overdraw是常见性能损耗点，且多是无谓的性能损耗。相关资料非常丰富，这里不赘述。只提醒一点：善用&lt;code&gt;Window.setBackgroundDrawable*()&lt;/code&gt;。&lt;/p&gt;
+
+&lt;h3 id=&#34;二-内存优化:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;二、内存优化&lt;/h3&gt;
+
+&lt;p&gt;优化内存使用也是一种常用的性能优化手段。它的机理是：GC会暂停所有线程，而频繁触发GC会加剧掉帧问题。&lt;/p&gt;
+
+&lt;p&gt;来看一下主题的设计图，其中图片矩阵可以容纳0~9张图片。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-08-01/memorySample.png&#34; width=&#34;300&#34;/&gt;&lt;/p&gt;
+
+&lt;p&gt;优化方法是：尽量缓存、重用ImageView。比如：在&lt;code&gt;onBindViewHolder()&lt;/code&gt;中发现图片矩阵控件中已经包含了7个ImageView（上次该控件显示的主题有7张图片），当前要显示的主题有5张图片，那么直接重用前5个ImageView，隐藏剩下的2个ImageView。&lt;/p&gt;
+
+&lt;h3 id=&#34;三-精简布局:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;三、精简布局&lt;/h3&gt;
+
+&lt;p&gt;来看一下主题的赞和评论区域。其中赞区域会有两种展现形式（针对不同的应用场景）。想想如果是你来实现，会怎么布局。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-08-01/hierachySample1.png&#34; width=&#34;300&#34;/&gt;
+&lt;img src=&#34;http://boxcounter.com/images/2015-08-01/hierachySample2.png&#34; width=&#34;300&#34;/&gt;&lt;/p&gt;
+
+&lt;p&gt;布局方式可能会是这样：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
+
+    &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 赞区域 --&amp;gt;&lt;/span&gt;
+    &amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt; &amp;gt;
+        &amp;lt;ImageView /&amp;gt;   &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 心形图标 --&amp;gt;&lt;/span&gt;
+        &amp;lt;GridLayout /&amp;gt;  &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 头像形式的赞 --&amp;gt;&lt;/span&gt;
+        &amp;lt;TextView /&amp;gt;    &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 文字形式的赞 --&amp;gt;&lt;/span&gt;
+    &amp;lt;/LinearLayout&amp;gt;
+
+    &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 评论区域 --&amp;gt;&lt;/span&gt;
+    &amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt; &amp;gt;
+        &amp;lt;ImageView /&amp;gt;   &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 评论图标 --&amp;gt;&lt;/span&gt;
+        &amp;lt;LinearLayout
+            android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt;
+            /&amp;gt; &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 评论列表容器 --&amp;gt;&lt;/span&gt;
+    &amp;lt;/LinearLayout&amp;gt;
+
+&amp;lt;/LinearLayout&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;根据赞的显示方式来设置&lt;code&gt;GridLayout&lt;/code&gt;和&lt;code&gt;TextView&lt;/code&gt;的Visibility。&lt;/p&gt;
+
+&lt;p&gt;我的方法是：根据需要动态改变布局结构、保正显示效果的同时精简数量和层级。优化后是这样：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
+
+    &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 赞区域 --&amp;gt;&lt;/span&gt;
+    &amp;lt;ViewStub android:background=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;heart.9.png&amp;quot;&lt;/span&gt; /&amp;gt;
+
+    &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 评论区域 --&amp;gt;&lt;/span&gt;
+    &amp;lt;LinearLayout
+        android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt;
+        android:background=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;comment.9.png&amp;quot;&lt;/span&gt;
+        android:paddingStart=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;?dp&amp;quot;&lt;/span&gt;
+        /&amp;gt; &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 评论列表容器 --&amp;gt;&lt;/span&gt;
+
+&amp;lt;/LinearLayout&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;首先，原赞区域的&lt;code&gt;GridLayout&lt;/code&gt;和&lt;code&gt;TextView&lt;/code&gt;都放到单独的布局文件中，原布局中换上&lt;code&gt;ViewStub&lt;/code&gt;，根据需要动态inflate。其次，赞和评论图标改成.9图作为&lt;code&gt;Background&lt;/code&gt;、并辅以&lt;code&gt;paddingStart&lt;/code&gt;（具体数值由评论图标的宽度计算得到）。&lt;/p&gt;
+
+&lt;p&gt;后者的缺点是.9图可能因为拉伸变得不够清晰，但实测下来效果满足需要。&lt;/p&gt;
+
+&lt;h3 id=&#34;四-预处理:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;四、预处理&lt;/h3&gt;
+
+&lt;p&gt;需要引入一点业务数据结构来辅助说明。&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #008000&#34;&gt;// 约定：为了行文简洁，本文中所有代码都隐藏了诸如public关键字、构造函数等非核心内容。&lt;/span&gt;
+
+&lt;span style=&#34;color: #008000&#34;&gt;// 主题&lt;/span&gt;
+&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;Topic&lt;/span&gt; {
+    String mText;               &lt;span style=&#34;color: #008000&#34;&gt;// 文字内容。&lt;/span&gt;
+    List&amp;lt;String&amp;gt; mImages;       &lt;span style=&#34;color: #008000&#34;&gt;// 图片链接。&lt;/span&gt;
+    List&amp;lt;User&amp;gt; mLikes;          &lt;span style=&#34;color: #008000&#34;&gt;// 点赞的用户。&lt;/span&gt;
+    List&amp;lt;Comment&amp;gt; mComments;    &lt;span style=&#34;color: #008000&#34;&gt;// 评论。&lt;/span&gt;
+    User mCreater;              &lt;span style=&#34;color: #008000&#34;&gt;// 发表人。&lt;/span&gt;
+    &lt;span style=&#34;color: #2b91af&#34;&gt;long&lt;/span&gt; mCreateTime;           &lt;span style=&#34;color: #008000&#34;&gt;// 发表的时间戳。&lt;/span&gt;
+}
+
+&lt;span style=&#34;color: #008000&#34;&gt;// 评论&lt;/span&gt;
+&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;Comment&lt;/span&gt; {
+    String mText;   &lt;span style=&#34;color: #008000&#34;&gt;// 文字内容。&lt;/span&gt;
+    User mCreater;  &lt;span style=&#34;color: #008000&#34;&gt;// 发表人。&lt;/span&gt;
+}
+
+&lt;span style=&#34;color: #008000&#34;&gt;// 用户&lt;/span&gt;
+&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;User&lt;/span&gt; {
+    String mName;       &lt;span style=&#34;color: #008000&#34;&gt;// 用户名称。&lt;/span&gt;
+    String mAvatarUrl;  &lt;span style=&#34;color: #008000&#34;&gt;// 头像的下载地址。&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;这其中有部分数据是可以预处理的，得到的数据结构如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
+    CharSequence mText;             &lt;span style=&#34;color: #008000&#34;&gt;// 包含Spannable（比如超链接）的正文。&lt;/span&gt;
+    String mLikes;                  &lt;span style=&#34;color: #008000&#34;&gt;// 用逗号分隔的文字形式的点赞用户的名称。&lt;/span&gt;
+    List&amp;lt;CharSequence&amp;gt; mComments;   &lt;span style=&#34;color: #008000&#34;&gt;// 包含Spannable的评论列表。&lt;/span&gt;
+    String mCreateTime;             &lt;span style=&#34;color: #008000&#34;&gt;// 发表时间。&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;然后在&lt;code&gt;onBindViewHolder()&lt;/code&gt;中就可以直接将&lt;code&gt;PreprocessResult&lt;/code&gt;的内容设置到相应的view上，避免在UI线程中动态处理造成掉帧。&lt;/p&gt;
+
+&lt;p&gt;这种方法的缺点是增加了复杂度：PreprocessResult需要和Topic保持同步更新。比如用户点赞、发表评论之后，需要同步修改PreprocessResult和Topic。&lt;/p&gt;
+
+&lt;h3 id=&#34;五-预创建:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;五、预创建&lt;/h3&gt;
+
+&lt;p&gt;分析发现，滚动过程会因为动态创建TopicView而卡顿。TopicView是用来显示整个主题的自定义View，包含前述的赞和评论等子布局。即便经过精简，整个布局依然比较复杂，inflate过程很耗时。于是预先创建了一些TopicView备用，在&lt;code&gt;onCreateViewHolder()&lt;/code&gt;中尽量使用它们，如果备用已经用完再动态创建。&lt;/p&gt;
+
+&lt;h3 id=&#34;六-优化textview:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;六、优化TextView&lt;/h3&gt;
+
+&lt;p&gt;经过上述这几步优化之后，流畅度提升了很多，但偶尔还是会出现较明显的卡顿现象。分析发现是&lt;code&gt;TextView.setText()&lt;/code&gt;耗时过长导致的，在高强度测试下（长文主题，并且有很多评论），平均一次长文的调用就可能耗时22ms，已经超过了保证帧率的16ms上限。&lt;/p&gt;
+
+&lt;p&gt;因为这个项目的业务逻辑决定了主题、评论的文字内容不会被修改，只有增删。于是采用的优化方法是：对于主题正文和评论，用&lt;code&gt;StaticLayout&lt;/code&gt;配合自定义View展示文字。自定义View代码如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;StaticLayoutView&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;extends&lt;/span&gt; View {
+    &lt;span style=&#34;color: #0000ff&#34;&gt;private&lt;/span&gt; StaticLayout mLayout;
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; setLayout(StaticLayout layout) {
+        mLayout = layout;
+
+        &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; height = layout.getHeight();
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; ((mLayout.getWidth() != layout.getWidth()) ||
+                (mLayoutHeight != height)) {
+            requestLayout();
+        }
+
+        mLayoutHeight = height;
+    }
+
+    @Override
+    &lt;span style=&#34;color: #0000ff&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; onDraw(Canvas canvas) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;super&lt;/span&gt;.onDraw(canvas);
+
+        canvas.save();
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (&lt;span style=&#34;color: #0000ff&#34;&gt;null&lt;/span&gt; != mLayout) {
+            canvas.translate(getPaddingLeft(), getPaddingTop());
+            mLayout.draw(canvas);
+        }
+        canvas.restore();
+    }
+
+    @Override
+    &lt;span style=&#34;color: #0000ff&#34;&gt;protected&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; onMeasure(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; widthMeasureSpec, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; heightMeasureSpec) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;super&lt;/span&gt;.onMeasure(widthMeasureSpec, heightMeasureSpec);
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (&lt;span style=&#34;color: #0000ff&#34;&gt;null&lt;/span&gt; != mLayout) {
+            setMeasuredDimension(getMeasuredWidth(),
+                    mLayoutHeight + getPaddingTop() + getPaddingBottom());
+        }
+    }
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;StaticLayoutView相比TextView简单、高效很多，更重要的是&lt;code&gt;StaticLayout&lt;/code&gt;可以在非UI线程创建、初始化。于是前述「预处理」过程中的数据结构变为：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
+    StaticLayout mText;             &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;= 之前是CharSequence&lt;/span&gt;
+    String mLikes;
+    List&amp;lt;StaticLayout&amp;gt; mComments;   &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;= 之前是List&amp;lt;CharSequence&amp;gt;&lt;/span&gt;
+    String mCreateTime;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;优化后，在高强度测试环境下，平均帧率从34上升至47。实际环境中的平均帧率约为51。&lt;/p&gt;
+
+&lt;h2 id=&#34;总结:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;总结&lt;/h2&gt;
+
+&lt;p&gt;整个优化过程的核心思想是：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;尽量减少滚动时UI线程中的耗时操作。能挪到后台线程的就不在UI线程中做，必须在UI线程做、但能预先处理的就提早处理；&lt;/li&gt;
+&lt;li&gt;以空间换时间。用缓存来减少GC、创建等耗时操作；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;需要说明的是，一些优化方法是有代价的：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;预处理可能增加用户的等待时间。以这个项目为例，进入某Activity后，一边显示进度条，一边从服务端获取一批Topic显示给用户。预处理和预先创建会较明显地增加用户的等待时间；&lt;/li&gt;
+&lt;li&gt;缓存数据越多，OOM的风险越大；&lt;/li&gt;
+&lt;li&gt;增加了复杂度；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&#34;后记:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;后记&lt;/h2&gt;
+
+&lt;p&gt;除前述优化方法之外，还有一些零星的、未能实际应用的优化方法。比如：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;在&lt;code&gt;onBindViewHolder()&lt;/code&gt;中检查之前显示的内容是否就是当前将要显示的内容。如果是，return即可。这种方法可以在反方向滚动时，避免不必要的更新view操作。但前提条件是内容不会动态改变，在这个项目中Topic的内容是可能动态改变的，使用这个方法后反而增加了复杂度，权衡得失后，放弃了这个优化方法；&lt;/li&gt;
+&lt;li&gt;使用Tracer for OpenGL检查OpenGL渲染过程；&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;此外，即便经过这一系列的优化，卡顿问题也未能根除。后续我可能会继续改进优化方案，如果有新的心得体会，再补上。也希望有同好分享经验，相互交流，共同进步，谢谢。&lt;/p&gt;
+
+&lt;p&gt;最后，聊一下我对性能优化的一些建议：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;先分析性能瓶颈，再对症下药。对于有经验的研发，这个过程可以适当地借助自己的经验法则。忌讳想当然的「优化」。&lt;/li&gt;
+&lt;li&gt;善用工具。比如Traceview、Memory Monitor、Hierarchy Viewer。本文所述的优化过程重度依赖这些工具。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h2 id=&#34;参考资料:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;参考资料&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://android-developers.blogspot.com/2010/10/traceview-war-story.html&#34;&gt;Traceview War Story&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://developer.android.com/intl/zh-cn/tools/debugging/debugging-ui.html&#34;&gt;Optimizing Your UI&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.youtube.com/playlist?list=PLWz5rJ2EKKc9CBxr3BVjPTPoDPLdPIFCE&#34;&gt;Android Performance Patterns&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.curious-creature.com/2012/12/01/android-performance-case-study/&#34;&gt;Android Performance Case Study&lt;/a&gt; by Romain Guy&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.curious-creature.com/docs/android-performance-case-study-1.html&#34;&gt;Android Performance Case Study（同名不同文）&lt;/a&gt; by Romain Guy&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://hukai.me/android-performance-patterns/&#34;&gt;Android性能优化典范&lt;/a&gt; by 胡凯&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://ragnraok.github.io/textview-pre-render-research.html&#34;&gt;TextView预渲染研究&lt;/a&gt; by Ragnarok&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://instagram-engineering.tumblr.com/post/114508858967/improving-comment-rendering-on-android&#34;&gt;Improving Comment Rendering on Android&lt;/a&gt; by Instagram&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

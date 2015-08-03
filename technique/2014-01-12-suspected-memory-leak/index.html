@@ -40,68 +40,68 @@
 
     <div class="container">
         <h1><a href="http://boxcounter.com/technique/2014-01-12-suspected-memory-leak/">一起疑似内存泄漏</a></h1>
-        <span class="lead">2014/01/01</span>
+        <hr />
+        <span class="post-time">2014-01-12</span>
         <div class="post">
             <p>上周遇到一起极其诡异的内存泄漏。现象是：<br />
-　　某种测试方法可以使程序物理内存使用量（top命令的RES列）持续上升。当停止测试之后，程序内存使用量稳定在测试过程中的最高值不变。从现象上看就是一典型的内存泄漏。</p>
+某种测试方法可以使程序物理内存使用量（top命令的RES列）持续上升。当停止测试之后，程序内存使用量稳定在测试过程中的最高值不变。从现象上看就是一典型的内存泄漏。</p>
 
-<p>　　我的诊断步骤：</p>
+<p>我的诊断步骤：</p>
 
 <ol>
 <li><p>使用valgrind的memcheck检查泄漏。故障重现后让程序自然退出。memcheck提示资源泄漏量为0.<br />
-  所以，该内存应该没有被泄漏，程序中对它们还有引用，在程序退出时被正常释放掉了。</p></li>
+所以，该内存应该没有被泄漏，程序中对它们还有引用，在程序退出时被正常释放掉了。</p></li>
 
 <li><p>使用valgrind的massif分析内存使用。找到了一处可疑的「泄漏」点，90%的内存都是在该处分配。<br />
-  但是调试发现该处分配（通过malloc）的内存都被正确的释放（通过free）掉了。</p></li>
+但是调试发现该处分配（通过malloc）的内存都被正确的释放（通过free）掉了。</p></li>
 
 <li><p>使用malloc_info函数查看程序运行过程中的内存情况。
-  这是在程序物理内存占用2G后我停止测试以后一段时间（大概5分钟）的输出：</p>
+这是在程序物理内存占用2G后我停止测试以后一段时间（大概5分钟）的输出：</p>
 
-<pre><code>arena(462848), ordblks(2), smblks(1), hblks(5), hblkhd(104857600), usmblks(0), fsmblks(32), uordblks(459424), fordblks(3424), keepcost(3360).
-</code></pre>
-
-<p>从上面看，从heap中申请了462848(arena的值，约46KB)，mmap申请的内存是104857600（hblkhd的值，约100MB）。这俩值加在一起和top里显示的2G差很远啊。
-  注，arena和hblkhd的man注解：</p>
-
-<pre><code>arena   The total amount of memory allocated by means other than
-        mmap(2) (i.e., memory allocated on the heap).  This figure
-        includes both in-use blocks and blocks on the free list.
-hblkhd  The number of bytes in blocks currently allocated using
-        mmap(2).
-</code></pre></li>
-
-<li><p>决定统计内存分配释放的次数和尺寸，目的是检查是否严重失衡。因为new/delete不太好跟踪，所以只处理了malloc/free。<br />
-  使用的方法是wrap（gcc/g++的「-Wl,&ndash;wrap,malloc」选项），看了一眼glibc的源码，以在free时候得到待释放内存的尺寸。最后的结果是没有严重失衡，应该不是显式的内存释放。<br />
-  其实这个实验原本就没有报很大的希望，一来new/delete没有照顾到，不够精确。二来如果是显式的泄漏memcheck早就报告了。但是当时没有思路了，姑且一试，看能不能找到点面包屑。</p></li>
-
-<li><p>搜索了一些资料。有些提到glibc内部使用brk和mmap来进行内存分配，其中brk可能会造成这种泄漏假象。<br />
-  于是在程序的开始设置了M_MMAP_THRESHOLD，发现故障依然存在。</p>
-
-<pre><code>mallopt(M_MMAP_THRESHOLD, 1024*1024*1024); // 1G
-</code></pre></li>
+<p>arena(462848), ordblks(2), smblks(1), hblks(5), hblkhd(104857600), usmblks(0), fsmblks(32), uordblks(459424), fordblks(3424), keepcost(3360).</p></li>
 </ol>
 
-<p>　　原本还想在不同的模块里使用不同的堆，然后反复根据堆的尺寸细分堆，来精确定位。却发现linux下没有类似HeapCreate的函数。</p>
+<p>从上面看，从heap中申请了462848(arena的值，约46KB)，mmap申请的内存是104857600（hblkhd的值，约100MB）。这俩值加在一起和top里显示的2G差很远啊。
+   注，arena和hblkhd的man注解：</p>
 
-<p>　　技穷了。于是我邀请一位同事来协助分析，在协作中我发现我犯了个错误：尝试方法5的时候，我理解反了M_MMAP_THRESHOLD的含义，于是提供错了参数。实际上应该是这样：</p>
-
-<pre><code>mallopt(M_MMAP_THRESHOLD, 0);
+<pre><code> arena   The total amount of memory allocated by means other than
+         mmap(2) (i.e., memory allocated on the heap).  This figure
+         includes both in-use blocks and blocks on the free list.
+ hblkhd  The number of bytes in blocks currently allocated using
+         mmap(2).
 </code></pre>
 
-<p>　　然后故障消失了。也就是说，这次的故障实际并不是我们程序实现的资源泄漏，而是glibc堆管理机制导致的「资源泄漏」。我很奇怪为什么glibc没有重用程序调用free释放掉的空间，而是继续扩充堆。这个问题值得继续琢磨。</p>
+<ol>
+<li><p>决定统计内存分配释放的次数和尺寸，目的是检查是否严重失衡。因为new/delete不太好跟踪，所以只处理了malloc/free。<br />
+使用的方法是wrap（gcc/g++的「-Wl,&ndash;wrap,malloc」选项），看了一眼glibc的源码，以在free时候得到待释放内存的尺寸。最后的结果是没有严重失衡，应该不是显式的内存释放。<br />
+其实这个实验原本就没有报很大的希望，一来new/delete没有照顾到，不够精确。二来如果是显式的泄漏memcheck早就报告了。但是当时没有思路了，姑且一试，看能不能找到点面包屑。</p></li>
 
-<p>　　总结：本次故障的分析过程里我的粗心大意又给自己惹了大麻烦。原本思路是正确的，结果走歪了。。。 自作孽啊。。。</p>
+<li><p>搜索了一些资料。有些提到glibc内部使用brk和mmap来进行内存分配，其中brk可能会造成这种泄漏假象。<br />
+于是在程序的开始设置了M_MMAP_THRESHOLD，发现故障依然存在。</p>
 
-<p>　　但是，即便这个故障不是程序实现BUG所导致的，实际上还是会对程序造成不好的影响：</p>
+<p>mallopt(M_MMAP_THRESHOLD, 1024*1024*1024); // 1G</p></li>
+</ol>
+
+<p>原本还想在不同的模块里使用不同的堆，然后反复根据堆的尺寸细分堆，来精确定位。却发现linux下没有类似HeapCreate的函数。</p>
+
+<p>技穷了。于是我邀请一位同事来协助分析，在协作中我发现我犯了个错误：尝试方法5的时候，我理解反了M_MMAP_THRESHOLD的含义，于是提供错了参数。实际上应该是这样：</p>
+
+<p>mallopt(M_MMAP_THRESHOLD, 0);</p>
+
+<p>然后故障消失了。也就是说，这次的故障实际并不是我们程序实现的资源泄漏，而是glibc堆管理机制导致的「资源泄漏」。我很奇怪为什么glibc没有重用程序调用free释放掉的空间，而是继续扩充堆。这个问题值得继续琢磨。</p>
+
+<p>总结：本次故障的分析过程里我的粗心大意又给自己惹了大麻烦。原本思路是正确的，结果走歪了。。。 自作孽啊。。。</p>
+
+<p>但是，即便这个故障不是程序实现BUG所导致的，实际上还是会对程序造成不好的影响：</p>
 
 <ul>
 <li>如果调整M_MMAP_THRESHOLD让程序不「泄漏」，那么资源占用和性能会变差。原因参考帮助文档中对该参数的描述。</li>
 <li>如果放任不管，程序会不停地吃内存，并且占住不释放。我尝试让程序持续吃内存，最后稳定在3GB的物理内存（共4G）和2.6G的swap空间（共4G）的消耗。（但没有被oom killer干掉）</li>
 </ul>
 
-<p>　　再琢磨琢磨吧。</p>
+<p>再琢磨琢磨吧。</p>
 
-<p>　　最后，感谢我的同事cntrump。并附上《代码大全》里的一段话，我前些天重温的时候才看过：</p>
+<p>最后，感谢我的同事cntrump。并附上《代码大全》里的一段话，我前些天重温的时候才看过：</p>
 
 <blockquote>
 <p>23.2 <strong>寻找缺陷</strong> - <em>同他人讨论问题</em><br />
@@ -128,9 +128,9 @@ hblkhd  The number of bytes in blocks currently allocated using
         </div>
       </footer>
 
- 
+
      </div>
-     
+
         <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
         <script src="/js/bootstrap.min.js"></script>
         <script src="/js/bootswatch.js"></script>
