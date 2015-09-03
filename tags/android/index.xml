@@ -6,8 +6,83 @@
     <description>Recent content in Android on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sat, 01 Aug 2015 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 01 Sep 2015 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://boxcounter.com/tags/android/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>baselineAligned属性</title>
+      <link>http://boxcounter.com/technique/2015-09-01-baselineAligned/</link>
+      <pubDate>Tue, 01 Sep 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2015-09-01-baselineAligned/</guid>
+      <description>&lt;p&gt;在使用LinearLayout+TextView的过程中遇到一个看似诡异的问题，显示效果如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-09-01/baselineAligned.png&#34; width=&#34;300&#34;/&gt;&lt;/p&gt;
+
+&lt;p&gt;其中两个灰色方块是使用代码动态创建的TextView。它们的父LinearLayout是这样的：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout
+    android:id=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;@+id/ll_files&amp;quot;&lt;/span&gt;
+    android:layout_width=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;wrap_content&amp;quot;&lt;/span&gt;
+    android:layout_height=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;100dp&amp;quot;&lt;/span&gt;
+    android:layout_marginTop=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;7.5dp&amp;quot;&lt;/span&gt;
+    android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt;
+    /&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;不知道是什么原因，导致第一个TextView「下挫」了一些。仔细检查了它的margin和padding都是0、符合预期，但top是29。&lt;/p&gt;
+
+&lt;p&gt;仔细阅读了一遍代码和布局文件，确定我并没有误调整top，那么问题应该出现在动态layout过程中。那就开始调试分析吧。&lt;/p&gt;
+
+&lt;p&gt;顺着LinearLayout.onLayout()追踪到了LinearLayout.layoutHorizontal()，发现了这样一段代码：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; layoutHorizontal(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; left, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; top, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; right, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; bottom) {
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+    
+    &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; childBaseline = -1;
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;final&lt;/span&gt; LinearLayout.LayoutParams lp =
+            (LinearLayout.LayoutParams) child.getLayoutParams();
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (baselineAligned &amp;amp;&amp;amp; lp.height != LayoutParams.MATCH_PARENT) {
+        childBaseline = child.getBaseline();
+    }
+    
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;switch&lt;/span&gt; (gravity &amp;amp; Gravity.VERTICAL_GRAVITY_MASK) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;case&lt;/span&gt; Gravity.TOP:
+            childTop = paddingTop + lp.topMargin;
+            &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (childBaseline != -1) {
+                childTop += maxAscent[INDEX_TOP] - childBaseline;  &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;==== A&lt;/span&gt;
+            }
+            &lt;span style=&#34;color: #0000ff&#34;&gt;break&lt;/span&gt;;
+    
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;当执行完A行时，childTop等于29。问题出在这里，再反向阅读代码，跟踪到了两个关键变量：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;baselineAligned为true；&lt;/li&gt;
+&lt;li&gt;childBaseline不为0；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;这时我想起文本的&lt;a href=&#34;https://zh.wikipedia.org/wiki/%E5%9F%BA%E7%B7%9A&#34;&gt;baseline属性&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;继续查阅文档、代码，得到两个结论：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;LinearLayout的baselineAligned默认为true；&lt;/li&gt;
+&lt;li&gt;TextView重写了getBaseline()，返回了有效值；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;定位了问题症结，解决方案也就不难找了：将LinearLayout的android:baselineAligned改为false。&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Android下列表视图的性能优化</title>

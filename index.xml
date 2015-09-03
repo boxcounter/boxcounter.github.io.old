@@ -6,8 +6,83 @@
     <description>Recent content on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Thu, 13 Aug 2015 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Tue, 01 Sep 2015 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://boxcounter.com/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>baselineAligned属性</title>
+      <link>http://boxcounter.com/technique/2015-09-01-baselineAligned/</link>
+      <pubDate>Tue, 01 Sep 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2015-09-01-baselineAligned/</guid>
+      <description>&lt;p&gt;在使用LinearLayout+TextView的过程中遇到一个看似诡异的问题，显示效果如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-09-01/baselineAligned.png&#34; width=&#34;300&#34;/&gt;&lt;/p&gt;
+
+&lt;p&gt;其中两个灰色方块是使用代码动态创建的TextView。它们的父LinearLayout是这样的：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout
+    android:id=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;@+id/ll_files&amp;quot;&lt;/span&gt;
+    android:layout_width=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;wrap_content&amp;quot;&lt;/span&gt;
+    android:layout_height=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;100dp&amp;quot;&lt;/span&gt;
+    android:layout_marginTop=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;7.5dp&amp;quot;&lt;/span&gt;
+    android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt;
+    /&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;不知道是什么原因，导致第一个TextView「下挫」了一些。仔细检查了它的margin和padding都是0、符合预期，但top是29。&lt;/p&gt;
+
+&lt;p&gt;仔细阅读了一遍代码和布局文件，确定我并没有误调整top，那么问题应该出现在动态layout过程中。那就开始调试分析吧。&lt;/p&gt;
+
+&lt;p&gt;顺着LinearLayout.onLayout()追踪到了LinearLayout.layoutHorizontal()，发现了这样一段代码：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; layoutHorizontal(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; left, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; top, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; right, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; bottom) {
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+    
+    &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; childBaseline = -1;
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;final&lt;/span&gt; LinearLayout.LayoutParams lp =
+            (LinearLayout.LayoutParams) child.getLayoutParams();
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (baselineAligned &amp;amp;&amp;amp; lp.height != LayoutParams.MATCH_PARENT) {
+        childBaseline = child.getBaseline();
+    }
+    
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;switch&lt;/span&gt; (gravity &amp;amp; Gravity.VERTICAL_GRAVITY_MASK) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;case&lt;/span&gt; Gravity.TOP:
+            childTop = paddingTop + lp.topMargin;
+            &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (childBaseline != -1) {
+                childTop += maxAscent[INDEX_TOP] - childBaseline;  &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;==== A&lt;/span&gt;
+            }
+            &lt;span style=&#34;color: #0000ff&#34;&gt;break&lt;/span&gt;;
+    
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;当执行完A行时，childTop等于29。问题出在这里，再反向阅读代码，跟踪到了两个关键变量：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;baselineAligned为true；&lt;/li&gt;
+&lt;li&gt;childBaseline不为0；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;这时我想起文本的&lt;a href=&#34;https://zh.wikipedia.org/wiki/%E5%9F%BA%E7%B7%9A&#34;&gt;baseline属性&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;继续查阅文档、代码，得到两个结论：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;LinearLayout的baselineAligned默认为true；&lt;/li&gt;
+&lt;li&gt;TextView重写了getBaseline()，返回了有效值；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;定位了问题症结，解决方案也就不难找了：将LinearLayout的android:baselineAligned改为false。&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>ImageView.ScaleType</title>
@@ -32,7 +107,8 @@
 
 &lt;hr /&gt;
 
-&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2015-08-08/%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB.mindnode.zip&#34;&gt;从来就没有救世主.mindnode&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;野子苏运莹
+源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2015-08-08/%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB.mindnode.zip&#34;&gt;从来就没有救世主.mindnode&lt;/a&gt;&lt;/p&gt;
 </description>
     </item>
     
@@ -243,7 +319,7 @@
 &lt;td&gt;《文明之光（上）》&lt;/td&gt;
 &lt;td&gt;吴军&lt;/td&gt;
 &lt;td&gt;06-02&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
 &lt;td&gt;&lt;/td&gt;
 &lt;/tr&gt;
 
@@ -288,13 +364,13 @@
 &lt;td&gt;《文明之光（中）》&lt;/td&gt;
 &lt;td&gt;吴军&lt;/td&gt;
 &lt;td&gt;07-03&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
 &lt;td&gt;&lt;/td&gt;
 &lt;/tr&gt;
 
 &lt;tr&gt;
 &lt;td&gt;20&lt;/td&gt;
-&lt;td&gt;《三体——黑暗森林》&lt;/td&gt;
+&lt;td&gt;《三体：黑暗森林》&lt;/td&gt;
 &lt;td&gt;刘慈欣&lt;/td&gt;
 &lt;td&gt;07-07&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
@@ -321,7 +397,7 @@
 
 &lt;tr&gt;
 &lt;td&gt;23&lt;/td&gt;
-&lt;td&gt;《三体——死神永生》&lt;/td&gt;
+&lt;td&gt;《三体：死神永生》&lt;/td&gt;
 &lt;td&gt;刘慈欣&lt;/td&gt;
 &lt;td&gt;07-17&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
@@ -339,7 +415,7 @@
 
 &lt;tr&gt;
 &lt;td&gt;25&lt;/td&gt;
-&lt;td&gt;《茶艺师——基础知识》&lt;/td&gt;
+&lt;td&gt;《茶艺师：基础知识》&lt;/td&gt;
 &lt;td&gt;陈文华&lt;/td&gt;
 &lt;td&gt;07-28&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
@@ -348,7 +424,7 @@
 
 &lt;tr&gt;
 &lt;td&gt;26&lt;/td&gt;
-&lt;td&gt;《曾国藩1》&lt;/td&gt;
+&lt;td&gt;《曾国藩：血祭》&lt;/td&gt;
 &lt;td&gt;唐浩明&lt;/td&gt;
 &lt;td&gt;08-07&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
@@ -361,6 +437,33 @@
 &lt;td&gt;许小年&lt;/td&gt;
 &lt;td&gt;08-08&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/&#34;&gt;笔记&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;28&lt;/td&gt;
+&lt;td&gt;《曾国藩：野焚》&lt;/td&gt;
+&lt;td&gt;唐浩明&lt;/td&gt;
+&lt;td&gt;08-14&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;29&lt;/td&gt;
+&lt;td&gt;《文明之光（下）》&lt;/td&gt;
+&lt;td&gt;吴军&lt;/td&gt;
+&lt;td&gt;08-18&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;30&lt;/td&gt;
+&lt;td&gt;《曾国藩：黑雨》&lt;/td&gt;
+&lt;td&gt;唐浩明&lt;/td&gt;
+&lt;td&gt;08-26&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
 &lt;td&gt;&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
@@ -2263,35 +2366,6 @@ gcc的依赖项GMP/FPMR/MPC也不需要手动下载，在gcc的源码下执行./
 &lt;p&gt;　　附件：&lt;/p&gt;
 
 &lt;p&gt;　　（脚本可能看起来很麻烦，是我随手找了个守护程序的脚本改的。）&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>osx下解决emacs执行中文路径命令出错的方法</title>
-      <link>http://boxcounter.com/technique/2013-08-08-osx%E4%B8%8B%E8%A7%A3%E5%86%B3emacs%E6%89%A7%E8%A1%8C%E4%B8%AD%E6%96%87%E8%B7%AF%E5%BE%84%E5%91%BD%E4%BB%A4%E5%87%BA%E9%94%99%E7%9A%84%E6%96%B9%E6%B3%95/</link>
-      <pubDate>Mon, 12 Aug 2013 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2013-08-08-osx%E4%B8%8B%E8%A7%A3%E5%86%B3emacs%E6%89%A7%E8%A1%8C%E4%B8%AD%E6%96%87%E8%B7%AF%E5%BE%84%E5%91%BD%E4%BB%A4%E5%87%BA%E9%94%99%E7%9A%84%E6%96%B9%E6%B3%95/</guid>
-      <description>&lt;p&gt;我第一次发现这个问题是在使用auctex编译中文名tex文件的时候发现的，后来发现不仅仅是auctex，M－!执行shell命令中如果包含中文路径或文件名也失败，最后搜了一些资料测试了几种，发现了这个解决方案。&lt;/p&gt;
-
-&lt;p&gt;在emacs配置文件中增加如下一行：&lt;/p&gt;
-
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;(set-language-environment &lt;span style=&#34;color: #a31515&#34;&gt;&amp;#39;utf-8&lt;/span&gt;)
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;话说，测试了好几种方法才解决的，一高兴忘了记下出处。惭愧惭愧，谢谢那位我记不得的博主吧。&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;后记2013-08-14：&lt;/p&gt;
-
-&lt;p&gt;发现会影响vc-mode（svn1.8），导致提交中文修改纪录时报错：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;emacs svn: E000022: Can&#39;t convert string from native encoding to &#39;UTF-8&#39;:
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;暂未处理，后续处理了再补在这里。&lt;/p&gt;
 </description>
     </item>
     
