@@ -6,8 +6,126 @@
     <description>Recent content in Techniques on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Tue, 01 Sep 2015 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 05 Sep 2015 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://boxcounter.com/technique/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>RefBase::weakref_type::attemptIncStrong的理解</title>
+      <link>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</link>
+      <pubDate>Sat, 05 Sep 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</guid>
+      <description>&lt;p&gt;见中文注释内容：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)
+{
+    incWeak(id);
+    
+    weakref_impl* &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; impl = &lt;span style=&#34;color: #0000ff&#34;&gt;static_cast&lt;/span&gt;&amp;lt;weakref_impl*&amp;gt;(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
+    
+    &lt;span style=&#34;color: #2b91af&#34;&gt;int32_t&lt;/span&gt; curCount = impl-&amp;gt;mStrong;
+    LOG_ASSERT(curCount &amp;gt;= 0, &lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;attemptIncStrong called on %p after underflow&amp;quot;&lt;/span&gt;,
+               &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;while&lt;/span&gt; (curCount &amp;gt; 0 &amp;amp;&amp;amp; curCount != INITIAL_STRONG_VALUE) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (android_atomic_cmpxchg(curCount, curCount+1, &amp;amp;impl-&amp;gt;mStrong) == 0) {
+            &lt;span style=&#34;color: #0000ff&#34;&gt;break&lt;/span&gt;;
+        }
+        curCount = impl-&amp;gt;mStrong;
+    }
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount &amp;lt;= 0 || curCount == INITIAL_STRONG_VALUE) {
+        &lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; allow;
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount == INITIAL_STRONG_VALUE) {
+            &lt;span style=&#34;color: #008000&#34;&gt;// Attempting to acquire first strong reference...  this is allowed&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// if the object does NOT have a longer lifetime (meaning the&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// implementation doesn&amp;#39;t need to see this), or if the implementation&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// allows it to happen.&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// ====&amp;gt;&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// 未曾被强引用过，如果也不受弱引用影响，那肯定还未被销毁。&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;====&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+            allow = (impl-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) != OBJECT_LIFETIME_WEAK
+                  || impl-&amp;gt;mBase-&amp;gt;onIncStrongAttempted(FIRST_INC_STRONG, id);
+        } &lt;span style=&#34;color: #0000ff&#34;&gt;else&lt;/span&gt; {
+            &lt;span style=&#34;color: #008000&#34;&gt;// Attempting to revive the object...  this is allowed&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// if the object DOES have a longer lifetime (so we can safely&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// call the object with only a weak ref) and the implementation&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// allows it to happen.&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// ====&amp;gt;&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// 曾经被强引用过，如果不受弱引用影响，那么在RefBase.decStrong()中已经被销毁了，无法revive。&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// 所以，一定要受弱引用影响。&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;====&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+            allow = (impl-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) == OBJECT_LIFETIME_WEAK
+                  &amp;amp;&amp;amp; impl-&amp;gt;mBase-&amp;gt;onIncStrongAttempted(FIRST_INC_STRONG, id);
+        }
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (!allow) {
+            decWeak(id);
+            &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; false;
+        }
+        curCount = android_atomic_inc(&amp;amp;impl-&amp;gt;mStrong);
+        &lt;span style=&#34;color: #008000&#34;&gt;// If the strong reference count has already been incremented by&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// someone else, the implementor of onIncStrongAttempted() is holding&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// an unneeded reference.  So call onLastStrongRef() here to remove it.&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// (No, this is not pretty.)  Note that we MUST NOT do this if we&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// are in fact acquiring the first reference.&lt;/span&gt;
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount &amp;gt; 0 &amp;amp;&amp;amp; curCount &amp;lt; INITIAL_STRONG_VALUE) {
+            impl-&amp;gt;mBase-&amp;gt;onLastStrongRef(id);
+        }
+    }
+    
+    impl-&amp;gt;addWeakRef(id);
+    impl-&amp;gt;addStrongRef(id);
+&lt;span style=&#34;color: #0000ff&#34;&gt;#if PRINT_REFS&lt;/span&gt;
+    LOGD(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;attemptIncStrong of %p from %p: cnt=%d\n&amp;quot;&lt;/span&gt;, &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;, id, curCount);
+&lt;span style=&#34;color: #0000ff&#34;&gt;#endif&lt;/span&gt;
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount == INITIAL_STRONG_VALUE) {
+        android_atomic_add(-INITIAL_STRONG_VALUE, &amp;amp;impl-&amp;gt;mStrong);
+        impl-&amp;gt;mBase-&amp;gt;onFirstRef();
+    }
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; true;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; RefBase::decStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id) &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt;
+{
+    weakref_impl* &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; refs = mRefs;
+    refs-&amp;gt;removeStrongRef(id);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;int32_t&lt;/span&gt; c = android_atomic_dec(&amp;amp;refs-&amp;gt;mStrong);
+&lt;span style=&#34;color: #0000ff&#34;&gt;#if PRINT_REFS&lt;/span&gt;
+    LOGD(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;decStrong of %p from %p: cnt=%d\n&amp;quot;&lt;/span&gt;, &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;, id, c);
+&lt;span style=&#34;color: #0000ff&#34;&gt;#endif&lt;/span&gt;
+    LOG_ASSERT(c &amp;gt;= 1, &lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;decStrong() called on %p too many times&amp;quot;&lt;/span&gt;, refs);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (c == 1) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;const_cast&lt;/span&gt;&amp;lt;RefBase*&amp;gt;(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;)-&amp;gt;onLastStrongRef(id);
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; ((refs-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) != OBJECT_LIFETIME_WEAK) {
+            &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (refs-&amp;gt;mDestroyer) {
+                refs-&amp;gt;mDestroyer-&amp;gt;destroy(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
+            } &lt;span style=&#34;color: #0000ff&#34;&gt;else&lt;/span&gt; {
+                &lt;span style=&#34;color: #0000ff&#34;&gt;delete&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;;
+            }
+        }
+    }
+    refs-&amp;gt;removeWeakRef(id);
+    refs-&amp;gt;decWeak(id);
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;完整代码：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://android.googlesource.com/platform/frameworks/base/+/gingerbread/include/utils/RefBase.h&#34;&gt;RefBase.h&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://android.googlesource.com/platform/frameworks/base/+/gingerbread/libs/utils/RefBase.cpp&#34;&gt;RefBase.cpp&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
     
     <item>
       <title>baselineAligned属性</title>
@@ -192,7 +310,21 @@
 
 &lt;p&gt;后者的缺点是.9图可能因为拉伸变得不够清晰，但实测下来效果满足需要。&lt;/p&gt;
 
-&lt;h3 id=&#34;四-预处理:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;四、预处理&lt;/h3&gt;
+&lt;h3 id=&#34;四-改进布局:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;四、改进布局&lt;/h3&gt;
+
+&lt;p&gt;常用的方法有：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;在不增加布局层次及复杂度的前提下，用LinearLayout替换RelativeLayout；&lt;/li&gt;
+&lt;li&gt;减少LinearLayout.layout_weight属性的使用，分享一下项目中一个LinearLayout的实际数据：
+
+&lt;ul&gt;
+&lt;li&gt;使用layout_weight，measure耗时5.86ms；&lt;/li&gt;
+&lt;li&gt;弃用layout_weight，measure耗时2.28ms；&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;五-预处理:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;五、预处理&lt;/h3&gt;
 
 &lt;p&gt;需要引入一点业务数据结构来辅助说明。&lt;/p&gt;
 
@@ -237,11 +369,11 @@
 
 &lt;p&gt;这种方法的缺点是增加了复杂度：PreprocessResult需要和Topic保持同步更新。比如用户点赞、发表评论之后，需要同步修改PreprocessResult和Topic。&lt;/p&gt;
 
-&lt;h3 id=&#34;五-预创建:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;五、预创建&lt;/h3&gt;
+&lt;h3 id=&#34;六-预创建:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;六、预创建&lt;/h3&gt;
 
 &lt;p&gt;分析发现，滚动过程会因为动态创建TopicView而卡顿。TopicView是用来显示整个主题的自定义View，包含前述的赞和评论等子布局。即便经过精简，整个布局依然比较复杂，inflate过程很耗时。于是预先创建了一些TopicView备用，在&lt;code&gt;onCreateViewHolder()&lt;/code&gt;中尽量使用它们，如果备用已经用完再动态创建。&lt;/p&gt;
 
-&lt;h3 id=&#34;六-优化textview:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;六、优化TextView&lt;/h3&gt;
+&lt;h3 id=&#34;七-优化textview:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;七、优化TextView&lt;/h3&gt;
 
 &lt;p&gt;经过上述这几步优化之后，流畅度提升了很多，但偶尔还是会出现较明显的卡顿现象。分析发现是&lt;code&gt;TextView.setText()&lt;/code&gt;耗时过长导致的，在高强度测试下（长文主题，并且有很多评论），平均一次长文的调用就可能耗时22ms，已经超过了保证帧率的16ms上限。&lt;/p&gt;
 
@@ -1960,183 +2092,6 @@ fffff800`03f23f49 ret
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://www.osronline.com/showThread.cfm?link=110848&#34;&gt; STATUS_THREAD_IS_TERMINATING returned by FltSendMessage&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>ZeroMemory与类对象</title>
-      <link>http://boxcounter.com/technique/2012-09-20-ZeroMemory%E4%B8%8E%E7%B1%BB%E5%AF%B9%E8%B1%A1/</link>
-      <pubDate>Thu, 20 Sep 2012 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2012-09-20-ZeroMemory%E4%B8%8E%E7%B1%BB%E5%AF%B9%E8%B1%A1/</guid>
-      <description>&lt;p&gt;今天看到一段同事的代码：&lt;/p&gt;
-
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;ZeroMemory(&amp;amp;m_PacketInfo, &lt;span style=&#34;color: #0000ff&#34;&gt;sizeof&lt;/span&gt;(packet_info));
-
-&lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; packet_info
-{
-    string m_strModule;                 &lt;span style=&#34;color: #008000&#34;&gt;//模块&lt;/span&gt;
-    string m_strProtocol;               &lt;span style=&#34;color: #008000&#34;&gt;//协议&lt;/span&gt;
-	string m_strClientHostIP;           &lt;span style=&#34;color: #008000&#34;&gt;//客户端IP&lt;/span&gt;
-	string m_strClientHostPort;			&lt;span style=&#34;color: #008000&#34;&gt;//客户端端口&lt;/span&gt;
-    ...
-};
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;　　按照我的经验，这种对类对象进行ZeroMemory或者memset的代码会导致程序崩掉。因为会覆盖掉类对象中的关键域，比如虚表。但是同事在vs2005中这样做却很正常。让我很奇怪，于是花了点时间分析了下。&lt;/p&gt;
-
-&lt;p&gt;　　首先，std::string的vc实现并没有虚表，如下：
-&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;0:000&amp;gt; dt string
-QueueTest!string
-   +0x000 _Myproxy         : Ptr32 std::_Container_proxy
-   +0x004 _Bx              : std::_String_val::_Bxty
-   +0x014 _Mysize          : Uint4B
-   +0x018 _Myres           : Uint4B
-   +0x01c _Alval           : std::allocator
-   =00000000&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;`&lt;/span&gt;01202180
-   std::basic_string::npos : Uint4B
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;　　所以ZeroMemory后不会导致非法访问。&lt;/p&gt;
-
-&lt;p&gt;　　翻了一下std::string的实现，发现就是一普通的模板类，没有用到继承等OO特性。跟一普通的结构体和一系列配套函数的简单组合没太大区别。&lt;/p&gt;
-
-&lt;p&gt;　　于是写了一小段测试代码&lt;/p&gt;
-
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;Father&lt;/span&gt;
-{
-&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt;:
-    Father() {}
-    ~Father(){}
-
-    &lt;span style=&#34;color: #0000ff&#34;&gt;virtual&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; Show()
-    {
-        printf(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;Father\n&amp;quot;&lt;/span&gt;);
-    }
-};
-
-&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;Son&lt;/span&gt;: &lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; Father
-{
-&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt;:
-    &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; Show()
-    {
-        printf(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;Son\n&amp;quot;&lt;/span&gt;);
-    }
-};
-
-&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; main()
-{
-    Son son;
-
-    son.Show();
-    ZeroMemory(&amp;amp;son, &lt;span style=&#34;color: #0000ff&#34;&gt;sizeof&lt;/span&gt;(Son));
-    son.Show();
-
-    ...
-}
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;　　我对这段代码的预期是，因为有继承以及虚函数，所以会有虚表。ZeroMemory会导致虚表被破坏，然后在第二次Show的时候非法访问。但实际运行效果依然正常。&lt;br /&gt;
-　　于是检查了一下man的反汇编代码：
-&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;0:000:&lt;/span&gt;x86&amp;gt; uf main
-QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;main:
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd120 push    ebp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd121 mov     ebp,esp
-...
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd15d lea     ecx,[ebp-14h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd160 call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+3860(??0SonQAEXZ) (002faf19)
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd165 mov     &lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-4],0
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd16c lea     ecx,[ebp-14h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd16f call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+4840(?ShowSonUAEXXZ) (002fb2ed)
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd174 push    4
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd176 push    0
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd178 lea     eax,[ebp-14h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd17b push    eax
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd17c call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+1520(_memset) (002fa5f5)
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd181 add     esp,0Ch
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd184 lea     ecx,[ebp-14h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd187 call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+4840(?ShowSonUAEXXZ) (002fb2ed)
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd18c mov     &lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-4],0FFFFFFFFh
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd193 lea     ecx,[ebp-14h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd196 call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+4125(??1SonQAEXZ) (002fb022)
-...
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd1c9 mov     esp,ebp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd1cb pop     ebp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;002&lt;/span&gt;fd1cc ret
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;　　可以看出来，这段代码里根本就没有用到虚表，而是直接把内嵌函数地址。仔细琢磨琢磨，这样做确实有些道理：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;son是明确的Son类对象，son.Show是一个明确的函数，无需使用虚表进行间接调用。&lt;/li&gt;
-&lt;li&gt;效率更高。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;　　再想想什么时候才需要虚表呢？动态绑定。&lt;br /&gt;
-　　于是改了改测试代码，如下（Father和Son的定义不变）：&lt;/p&gt;
-
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; main()
-{
-    Son son;
-    Father *pson = (Father*)&amp;amp;son;
-
-    pson-&amp;gt;Show();
-    ZeroMemory(&amp;amp;son, &lt;span style=&#34;color: #0000ff&#34;&gt;sizeof&lt;/span&gt;(Son));
-    pson-&amp;gt;Show();
-    ...
-}
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;　　看看反汇编码：
-&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;0:000:&lt;/span&gt;x86&amp;gt; uf main
-QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;main:
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad120 push    ebp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad121 mov     ebp,esp
-...
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad15d lea     ecx,[ebp-14h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad160 call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+3860(??0SonQAEXZ) (011aaf19)
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad165 mov     &lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-4],0
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad16c lea     eax,[ebp-14h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad16f mov     &lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-20h],eax
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad172 mov     eax,&lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-20h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad175 mov     edx,&lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [eax]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad177 mov     esi,esp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad179 mov     ecx,&lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-20h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad17c mov     eax,&lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [edx]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad17e call    eax &amp;lt;--------
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad180 cmp     esi,esp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad182 call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+3870(__RTC_CheckEsp) (011aaf23)
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad187 push    4
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad189 push    0
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad18b lea     eax,[ebp-14h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad18e push    eax
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad18f call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+1520(_memset) (011aa5f5)
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad194 add     esp,0Ch
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad197 mov     eax,&lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-20h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad19a mov     edx,&lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [eax]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad19c mov     esi,esp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad19e mov     ecx,&lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-20h]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1a1 mov     eax,&lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [edx]
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1a3 call    eax &amp;lt;--------
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1a5 cmp     esi,esp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1a7 call    QueueTest&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;ILT+3870(__RTC_CheckEsp) (011aaf23)
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1ac mov     &lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ebp-4],0FFFFFFFFh
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1b3 lea     ecx,[ebp-14h]
-...
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1e9 mov     esp,ebp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1eb pop     ebp
-&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;011&lt;/span&gt;ad1ec ret
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;　　可以看到这次用了虚表。再运行，果然崩了。&lt;/p&gt;
-
-&lt;p&gt;　　但是gcc的实现不同，于是最开始的那行ZeroMemory一跑就崩。&lt;/p&gt;
 </description>
     </item>
     

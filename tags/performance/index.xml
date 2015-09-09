@@ -104,7 +104,21 @@
 
 &lt;p&gt;后者的缺点是.9图可能因为拉伸变得不够清晰，但实测下来效果满足需要。&lt;/p&gt;
 
-&lt;h3 id=&#34;四-预处理:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;四、预处理&lt;/h3&gt;
+&lt;h3 id=&#34;四-改进布局:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;四、改进布局&lt;/h3&gt;
+
+&lt;p&gt;常用的方法有：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;在不增加布局层次及复杂度的前提下，用LinearLayout替换RelativeLayout；&lt;/li&gt;
+&lt;li&gt;减少LinearLayout.layout_weight属性的使用，分享一下项目中一个LinearLayout的实际数据：
+
+&lt;ul&gt;
+&lt;li&gt;使用layout_weight，measure耗时5.86ms；&lt;/li&gt;
+&lt;li&gt;弃用layout_weight，measure耗时2.28ms；&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h3 id=&#34;五-预处理:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;五、预处理&lt;/h3&gt;
 
 &lt;p&gt;需要引入一点业务数据结构来辅助说明。&lt;/p&gt;
 
@@ -149,11 +163,11 @@
 
 &lt;p&gt;这种方法的缺点是增加了复杂度：PreprocessResult需要和Topic保持同步更新。比如用户点赞、发表评论之后，需要同步修改PreprocessResult和Topic。&lt;/p&gt;
 
-&lt;h3 id=&#34;五-预创建:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;五、预创建&lt;/h3&gt;
+&lt;h3 id=&#34;六-预创建:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;六、预创建&lt;/h3&gt;
 
 &lt;p&gt;分析发现，滚动过程会因为动态创建TopicView而卡顿。TopicView是用来显示整个主题的自定义View，包含前述的赞和评论等子布局。即便经过精简，整个布局依然比较复杂，inflate过程很耗时。于是预先创建了一些TopicView备用，在&lt;code&gt;onCreateViewHolder()&lt;/code&gt;中尽量使用它们，如果备用已经用完再动态创建。&lt;/p&gt;
 
-&lt;h3 id=&#34;六-优化textview:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;六、优化TextView&lt;/h3&gt;
+&lt;h3 id=&#34;七-优化textview:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;七、优化TextView&lt;/h3&gt;
 
 &lt;p&gt;经过上述这几步优化之后，流畅度提升了很多，但偶尔还是会出现较明显的卡顿现象。分析发现是&lt;code&gt;TextView.setText()&lt;/code&gt;耗时过长导致的，在高强度测试下（长文主题，并且有很多评论），平均一次长文的调用就可能耗时22ms，已经超过了保证帧率的16ms上限。&lt;/p&gt;
 

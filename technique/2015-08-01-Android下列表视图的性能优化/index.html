@@ -132,7 +132,21 @@
 
 <p>后者的缺点是.9图可能因为拉伸变得不够清晰，但实测下来效果满足需要。</p>
 
-<h3 id="四-预处理:8c4b42c7fcdddc798bef89a3decbbb54">四、预处理</h3>
+<h3 id="四-改进布局:8c4b42c7fcdddc798bef89a3decbbb54">四、改进布局</h3>
+
+<p>常用的方法有：</p>
+
+<ul>
+<li>在不增加布局层次及复杂度的前提下，用LinearLayout替换RelativeLayout；</li>
+<li>减少LinearLayout.layout_weight属性的使用，分享一下项目中一个LinearLayout的实际数据：
+
+<ul>
+<li>使用layout_weight，measure耗时5.86ms；</li>
+<li>弃用layout_weight，measure耗时2.28ms；</li>
+</ul></li>
+</ul>
+
+<h3 id="五-预处理:8c4b42c7fcdddc798bef89a3decbbb54">五、预处理</h3>
 
 <p>需要引入一点业务数据结构来辅助说明。</p>
 
@@ -177,11 +191,11 @@
 
 <p>这种方法的缺点是增加了复杂度：PreprocessResult需要和Topic保持同步更新。比如用户点赞、发表评论之后，需要同步修改PreprocessResult和Topic。</p>
 
-<h3 id="五-预创建:8c4b42c7fcdddc798bef89a3decbbb54">五、预创建</h3>
+<h3 id="六-预创建:8c4b42c7fcdddc798bef89a3decbbb54">六、预创建</h3>
 
 <p>分析发现，滚动过程会因为动态创建TopicView而卡顿。TopicView是用来显示整个主题的自定义View，包含前述的赞和评论等子布局。即便经过精简，整个布局依然比较复杂，inflate过程很耗时。于是预先创建了一些TopicView备用，在<code>onCreateViewHolder()</code>中尽量使用它们，如果备用已经用完再动态创建。</p>
 
-<h3 id="六-优化textview:8c4b42c7fcdddc798bef89a3decbbb54">六、优化TextView</h3>
+<h3 id="七-优化textview:8c4b42c7fcdddc798bef89a3decbbb54">七、优化TextView</h3>
 
 <p>经过上述这几步优化之后，流畅度提升了很多，但偶尔还是会出现较明显的卡顿现象。分析发现是<code>TextView.setText()</code>耗时过长导致的，在高强度测试下（长文主题，并且有很多评论），平均一次长文的调用就可能耗时22ms，已经超过了保证帧率的16ms上限。</p>
 
