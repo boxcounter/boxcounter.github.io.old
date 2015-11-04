@@ -6,254 +6,20 @@
     <description>Recent content on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Wed, 09 Sep 2015 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Wed, 04 Nov 2015 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://boxcounter.com/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
-      <title>《真实世界的经济学》读书笔记</title>
-      <link>http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
-      <pubDate>Wed, 09 Sep 2015 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
-      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-09-09/真实世界的经济学.png&#34;/&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2015-09-09/%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6.mindnode.zip&#34;&gt;真实世界的经济学.mindnode&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>RefBase::weakref_type::attemptIncStrong的理解</title>
-      <link>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</link>
-      <pubDate>Sat, 05 Sep 2015 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</guid>
-      <description>&lt;p&gt;见中文注释内容：&lt;/p&gt;
-
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)
-{
-    incWeak(id);
-    
-    weakref_impl* &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; impl = &lt;span style=&#34;color: #0000ff&#34;&gt;static_cast&lt;/span&gt;&amp;lt;weakref_impl*&amp;gt;(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
-    
-    &lt;span style=&#34;color: #2b91af&#34;&gt;int32_t&lt;/span&gt; curCount = impl-&amp;gt;mStrong;
-    LOG_ASSERT(curCount &amp;gt;= 0, &lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;attemptIncStrong called on %p after underflow&amp;quot;&lt;/span&gt;,
-               &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
-    &lt;span style=&#34;color: #0000ff&#34;&gt;while&lt;/span&gt; (curCount &amp;gt; 0 &amp;amp;&amp;amp; curCount != INITIAL_STRONG_VALUE) {
-        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (android_atomic_cmpxchg(curCount, curCount+1, &amp;amp;impl-&amp;gt;mStrong) == 0) {
-            &lt;span style=&#34;color: #0000ff&#34;&gt;break&lt;/span&gt;;
-        }
-        curCount = impl-&amp;gt;mStrong;
-    }
-    
-    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount &amp;lt;= 0 || curCount == INITIAL_STRONG_VALUE) {
-        &lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; allow;
-        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount == INITIAL_STRONG_VALUE) {
-            &lt;span style=&#34;color: #008000&#34;&gt;// Attempting to acquire first strong reference...  this is allowed&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// if the object does NOT have a longer lifetime (meaning the&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// implementation doesn&amp;#39;t need to see this), or if the implementation&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// allows it to happen.&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// ====&amp;gt;&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// 未曾被强引用过，如果也不受弱引用影响，那肯定还未被销毁。&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;====&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
-            allow = (impl-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) != OBJECT_LIFETIME_WEAK
-                  || impl-&amp;gt;mBase-&amp;gt;onIncStrongAttempted(FIRST_INC_STRONG, id);
-        } &lt;span style=&#34;color: #0000ff&#34;&gt;else&lt;/span&gt; {
-            &lt;span style=&#34;color: #008000&#34;&gt;// Attempting to revive the object...  this is allowed&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// if the object DOES have a longer lifetime (so we can safely&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// call the object with only a weak ref) and the implementation&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// allows it to happen.&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// ====&amp;gt;&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// 曾经被强引用过，如果不受弱引用影响，那么在RefBase.decStrong()中已经被销毁了，无法revive。&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// 所以，一定要受弱引用影响。&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;====&lt;/span&gt;
-            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
-            allow = (impl-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) == OBJECT_LIFETIME_WEAK
-                  &amp;amp;&amp;amp; impl-&amp;gt;mBase-&amp;gt;onIncStrongAttempted(FIRST_INC_STRONG, id);
-        }
-        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (!allow) {
-            decWeak(id);
-            &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; false;
-        }
-        curCount = android_atomic_inc(&amp;amp;impl-&amp;gt;mStrong);
-        &lt;span style=&#34;color: #008000&#34;&gt;// If the strong reference count has already been incremented by&lt;/span&gt;
-        &lt;span style=&#34;color: #008000&#34;&gt;// someone else, the implementor of onIncStrongAttempted() is holding&lt;/span&gt;
-        &lt;span style=&#34;color: #008000&#34;&gt;// an unneeded reference.  So call onLastStrongRef() here to remove it.&lt;/span&gt;
-        &lt;span style=&#34;color: #008000&#34;&gt;// (No, this is not pretty.)  Note that we MUST NOT do this if we&lt;/span&gt;
-        &lt;span style=&#34;color: #008000&#34;&gt;// are in fact acquiring the first reference.&lt;/span&gt;
-        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount &amp;gt; 0 &amp;amp;&amp;amp; curCount &amp;lt; INITIAL_STRONG_VALUE) {
-            impl-&amp;gt;mBase-&amp;gt;onLastStrongRef(id);
-        }
-    }
-    
-    impl-&amp;gt;addWeakRef(id);
-    impl-&amp;gt;addStrongRef(id);
-&lt;span style=&#34;color: #0000ff&#34;&gt;#if PRINT_REFS&lt;/span&gt;
-    LOGD(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;attemptIncStrong of %p from %p: cnt=%d\n&amp;quot;&lt;/span&gt;, &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;, id, curCount);
-&lt;span style=&#34;color: #0000ff&#34;&gt;#endif&lt;/span&gt;
-    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount == INITIAL_STRONG_VALUE) {
-        android_atomic_add(-INITIAL_STRONG_VALUE, &amp;amp;impl-&amp;gt;mStrong);
-        impl-&amp;gt;mBase-&amp;gt;onFirstRef();
-    }
-    
-    &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; true;
-}
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; RefBase::decStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id) &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt;
-{
-    weakref_impl* &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; refs = mRefs;
-    refs-&amp;gt;removeStrongRef(id);
-    &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;int32_t&lt;/span&gt; c = android_atomic_dec(&amp;amp;refs-&amp;gt;mStrong);
-&lt;span style=&#34;color: #0000ff&#34;&gt;#if PRINT_REFS&lt;/span&gt;
-    LOGD(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;decStrong of %p from %p: cnt=%d\n&amp;quot;&lt;/span&gt;, &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;, id, c);
-&lt;span style=&#34;color: #0000ff&#34;&gt;#endif&lt;/span&gt;
-    LOG_ASSERT(c &amp;gt;= 1, &lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;decStrong() called on %p too many times&amp;quot;&lt;/span&gt;, refs);
-    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (c == 1) {
-        &lt;span style=&#34;color: #0000ff&#34;&gt;const_cast&lt;/span&gt;&amp;lt;RefBase*&amp;gt;(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;)-&amp;gt;onLastStrongRef(id);
-        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; ((refs-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) != OBJECT_LIFETIME_WEAK) {
-            &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (refs-&amp;gt;mDestroyer) {
-                refs-&amp;gt;mDestroyer-&amp;gt;destroy(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
-            } &lt;span style=&#34;color: #0000ff&#34;&gt;else&lt;/span&gt; {
-                &lt;span style=&#34;color: #0000ff&#34;&gt;delete&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;;
-            }
-        }
-    }
-    refs-&amp;gt;removeWeakRef(id);
-    refs-&amp;gt;decWeak(id);
-}
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;完整代码：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://android.googlesource.com/platform/frameworks/base/+/gingerbread/include/utils/RefBase.h&#34;&gt;RefBase.h&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://android.googlesource.com/platform/frameworks/base/+/gingerbread/libs/utils/RefBase.cpp&#34;&gt;RefBase.cpp&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>baselineAligned属性</title>
-      <link>http://boxcounter.com/technique/2015-09-01-baselineAligned/</link>
-      <pubDate>Tue, 01 Sep 2015 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2015-09-01-baselineAligned/</guid>
-      <description>&lt;p&gt;在使用LinearLayout+TextView的过程中遇到一个看似诡异的问题，显示效果如下：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-09-01/baselineAligned.png&#34; width=&#34;300&#34;/&gt;&lt;/p&gt;
-
-&lt;p&gt;其中两个灰色方块是使用代码动态创建的TextView。它们的父LinearLayout是这样的：&lt;/p&gt;
-
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout
-    android:id=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;@+id/ll_files&amp;quot;&lt;/span&gt;
-    android:layout_width=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;wrap_content&amp;quot;&lt;/span&gt;
-    android:layout_height=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;100dp&amp;quot;&lt;/span&gt;
-    android:layout_marginTop=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;7.5dp&amp;quot;&lt;/span&gt;
-    android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt;
-    /&amp;gt;
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;不知道是什么原因，导致第一个TextView「下挫」了一些。仔细检查了它的margin和padding都是0、符合预期，但top是29。&lt;/p&gt;
-
-&lt;p&gt;仔细阅读了一遍代码和布局文件，确定我并没有误调整top，那么问题应该出现在动态layout过程中。那就开始调试分析吧。&lt;/p&gt;
-
-&lt;p&gt;顺着LinearLayout.onLayout()追踪到了LinearLayout.layoutHorizontal()，发现了这样一段代码：&lt;/p&gt;
-
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; layoutHorizontal(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; left, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; top, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; right, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; bottom) {
-    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
-    
-    &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; childBaseline = -1;
-    
-    &lt;span style=&#34;color: #0000ff&#34;&gt;final&lt;/span&gt; LinearLayout.LayoutParams lp =
-            (LinearLayout.LayoutParams) child.getLayoutParams();
-    
-    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (baselineAligned &amp;amp;&amp;amp; lp.height != LayoutParams.MATCH_PARENT) {
-        childBaseline = child.getBaseline();
-    }
-    
-    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
-    
-    &lt;span style=&#34;color: #0000ff&#34;&gt;switch&lt;/span&gt; (gravity &amp;amp; Gravity.VERTICAL_GRAVITY_MASK) {
-        &lt;span style=&#34;color: #0000ff&#34;&gt;case&lt;/span&gt; Gravity.TOP:
-            childTop = paddingTop + lp.topMargin;
-            &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (childBaseline != -1) {
-                childTop += maxAscent[INDEX_TOP] - childBaseline;  &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;==== A&lt;/span&gt;
-            }
-            &lt;span style=&#34;color: #0000ff&#34;&gt;break&lt;/span&gt;;
-    
-    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
-}
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;p&gt;当执行完A行时，childTop等于29。问题出在这里，再反向阅读代码，跟踪到了两个关键变量：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;baselineAligned为true；&lt;/li&gt;
-&lt;li&gt;childBaseline不为0；&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;这时我想起文本的&lt;a href=&#34;https://zh.wikipedia.org/wiki/%E5%9F%BA%E7%B7%9A&#34;&gt;baseline属性&lt;/a&gt;。&lt;/p&gt;
-
-&lt;p&gt;继续查阅文档、代码，得到两个结论：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;LinearLayout的baselineAligned默认为true；&lt;/li&gt;
-&lt;li&gt;TextView重写了getBaseline()，返回了有效值；&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;定位了问题症结，解决方案也就不难找了：将LinearLayout的android:baselineAligned改为false。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>ImageView.ScaleType</title>
-      <link>http://boxcounter.com/technique/2015-08-13-ImageView-ScaleType/</link>
-      <pubDate>Thu, 13 Aug 2015 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2015-08-13-ImageView-ScaleType/</guid>
-      <description>&lt;p&gt;开启了「Show layout bounds」。左侧是宽图、右侧是竖图：&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-08-13/scaleTypeHorizontal.png&#34;  width=&#34;500&#34;/&gt;
-&lt;img src=&#34;http://boxcounter.com/images/2015-08-13/scaleTypeVertical.png&#34;  width=&#34;500&#34;/&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>《从来就没有救世主》读书笔记</title>
-      <link>http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</link>
-      <pubDate>Sat, 08 Aug 2015 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</guid>
-      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-08-08/从来就没有救世主.png&#34;/&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2015-08-08/%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB.mindnode.zip&#34;&gt;从来就没有救世主.mindnode&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
       <title>书单</title>
-      <link>http://boxcounter.com/essay/2015-08-03-%E4%B9%A6%E5%8D%95/</link>
-      <pubDate>Mon, 03 Aug 2015 00:00:00 +0000</pubDate>
+      <link>http://boxcounter.com/essay/2015-11-04-%E4%B9%A6%E5%8D%95/</link>
+      <pubDate>Wed, 04 Nov 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/essay/2015-08-03-%E4%B9%A6%E5%8D%95/</guid>
+      <guid>http://boxcounter.com/essay/2015-11-04-%E4%B9%A6%E5%8D%95/</guid>
       <description>
 
 &lt;p&gt;记录我读完的书，从2014年开始记录，每月起始更新上月读的书。主要记录有点厚度的，薄手册和零散资料不记。&lt;/p&gt;
 
-&lt;h3 id=&#34;分类:36a4ad5affe1962fa40babf59276037c&#34;&gt;分类&lt;/h3&gt;
+&lt;h3 id=&#34;分类:d3131400ac325638ee94c162912c7b84&#34;&gt;分类&lt;/h3&gt;
 
 &lt;table&gt;
 &lt;thead&gt;
@@ -313,7 +79,7 @@
 
 &lt;!-- https://mp.weixin.qq.com/s?__biz=MjM5NjQ3MDMxMA==&amp;mid=217884728&amp;idx=3&amp;sn=fc915e09648c48e5d81e4cf3358a0ee2&amp;key=af154fdc40fed003c8a2d3d70a5d4cc787e6c79bb83dc3f8c15b882ae7ff4bcd5aa5192904537e33e0b97e4a4d33ad06&amp;ascene=1&amp;uin=NjQ4OTk1NTQy&amp;devicetype=iPhone+OS8.3&amp;version=16020211&amp;nettype=WIFI&amp;fontScale=109&amp;pass_ticket=OnHOxL02jchDp082n6Y3fvFh8AE3PugSmpcuxtd3exPO2C%2F5xaRWrihNM3tYEQFX --&gt;
 
-&lt;h3 id=&#34;2015年:36a4ad5affe1962fa40babf59276037c&#34;&gt;2015年&lt;/h3&gt;
+&lt;h3 id=&#34;2015年:d3131400ac325638ee94c162912c7b84&#34;&gt;2015年&lt;/h3&gt;
 
 &lt;table&gt;
 &lt;thead&gt;
@@ -663,7 +429,7 @@
 &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;h3 id=&#34;2014年:36a4ad5affe1962fa40babf59276037c&#34;&gt;2014年&lt;/h3&gt;
+&lt;h3 id=&#34;2014年:d3131400ac325638ee94c162912c7b84&#34;&gt;2014年&lt;/h3&gt;
 
 &lt;table&gt;
 &lt;thead&gt;
@@ -1016,6 +782,240 @@
     </item>
     
     <item>
+      <title>《真实世界的经济学》读书笔记</title>
+      <link>http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
+      <pubDate>Wed, 09 Sep 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
+      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-09-09/真实世界的经济学.png&#34;/&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2015-09-09/%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6.mindnode.zip&#34;&gt;真实世界的经济学.mindnode&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>RefBase::weakref_type::attemptIncStrong的理解</title>
+      <link>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</link>
+      <pubDate>Sat, 05 Sep 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</guid>
+      <description>&lt;p&gt;见中文注释内容：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)
+{
+    incWeak(id);
+    
+    weakref_impl* &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; impl = &lt;span style=&#34;color: #0000ff&#34;&gt;static_cast&lt;/span&gt;&amp;lt;weakref_impl*&amp;gt;(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
+    
+    &lt;span style=&#34;color: #2b91af&#34;&gt;int32_t&lt;/span&gt; curCount = impl-&amp;gt;mStrong;
+    LOG_ASSERT(curCount &amp;gt;= 0, &lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;attemptIncStrong called on %p after underflow&amp;quot;&lt;/span&gt;,
+               &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;while&lt;/span&gt; (curCount &amp;gt; 0 &amp;amp;&amp;amp; curCount != INITIAL_STRONG_VALUE) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (android_atomic_cmpxchg(curCount, curCount+1, &amp;amp;impl-&amp;gt;mStrong) == 0) {
+            &lt;span style=&#34;color: #0000ff&#34;&gt;break&lt;/span&gt;;
+        }
+        curCount = impl-&amp;gt;mStrong;
+    }
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount &amp;lt;= 0 || curCount == INITIAL_STRONG_VALUE) {
+        &lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; allow;
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount == INITIAL_STRONG_VALUE) {
+            &lt;span style=&#34;color: #008000&#34;&gt;// Attempting to acquire first strong reference...  this is allowed&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// if the object does NOT have a longer lifetime (meaning the&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// implementation doesn&amp;#39;t need to see this), or if the implementation&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// allows it to happen.&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// ====&amp;gt;&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// 未曾被强引用过，如果也不受弱引用影响，那肯定还未被销毁。&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;====&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+            allow = (impl-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) != OBJECT_LIFETIME_WEAK
+                  || impl-&amp;gt;mBase-&amp;gt;onIncStrongAttempted(FIRST_INC_STRONG, id);
+        } &lt;span style=&#34;color: #0000ff&#34;&gt;else&lt;/span&gt; {
+            &lt;span style=&#34;color: #008000&#34;&gt;// Attempting to revive the object...  this is allowed&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// if the object DOES have a longer lifetime (so we can safely&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// call the object with only a weak ref) and the implementation&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// allows it to happen.&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// ====&amp;gt;&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// 曾经被强引用过，如果不受弱引用影响，那么在RefBase.decStrong()中已经被销毁了，无法revive。&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// 所以，一定要受弱引用影响。&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;====&lt;/span&gt;
+            &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+            allow = (impl-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) == OBJECT_LIFETIME_WEAK
+                  &amp;amp;&amp;amp; impl-&amp;gt;mBase-&amp;gt;onIncStrongAttempted(FIRST_INC_STRONG, id);
+        }
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (!allow) {
+            decWeak(id);
+            &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; false;
+        }
+        curCount = android_atomic_inc(&amp;amp;impl-&amp;gt;mStrong);
+        &lt;span style=&#34;color: #008000&#34;&gt;// If the strong reference count has already been incremented by&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// someone else, the implementor of onIncStrongAttempted() is holding&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// an unneeded reference.  So call onLastStrongRef() here to remove it.&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// (No, this is not pretty.)  Note that we MUST NOT do this if we&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// are in fact acquiring the first reference.&lt;/span&gt;
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount &amp;gt; 0 &amp;amp;&amp;amp; curCount &amp;lt; INITIAL_STRONG_VALUE) {
+            impl-&amp;gt;mBase-&amp;gt;onLastStrongRef(id);
+        }
+    }
+    
+    impl-&amp;gt;addWeakRef(id);
+    impl-&amp;gt;addStrongRef(id);
+&lt;span style=&#34;color: #0000ff&#34;&gt;#if PRINT_REFS&lt;/span&gt;
+    LOGD(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;attemptIncStrong of %p from %p: cnt=%d\n&amp;quot;&lt;/span&gt;, &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;, id, curCount);
+&lt;span style=&#34;color: #0000ff&#34;&gt;#endif&lt;/span&gt;
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (curCount == INITIAL_STRONG_VALUE) {
+        android_atomic_add(-INITIAL_STRONG_VALUE, &amp;amp;impl-&amp;gt;mStrong);
+        impl-&amp;gt;mBase-&amp;gt;onFirstRef();
+    }
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; true;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; RefBase::decStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id) &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt;
+{
+    weakref_impl* &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; refs = mRefs;
+    refs-&amp;gt;removeStrongRef(id);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;int32_t&lt;/span&gt; c = android_atomic_dec(&amp;amp;refs-&amp;gt;mStrong);
+&lt;span style=&#34;color: #0000ff&#34;&gt;#if PRINT_REFS&lt;/span&gt;
+    LOGD(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;decStrong of %p from %p: cnt=%d\n&amp;quot;&lt;/span&gt;, &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;, id, c);
+&lt;span style=&#34;color: #0000ff&#34;&gt;#endif&lt;/span&gt;
+    LOG_ASSERT(c &amp;gt;= 1, &lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;decStrong() called on %p too many times&amp;quot;&lt;/span&gt;, refs);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (c == 1) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;const_cast&lt;/span&gt;&amp;lt;RefBase*&amp;gt;(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;)-&amp;gt;onLastStrongRef(id);
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; ((refs-&amp;gt;mFlags&amp;amp;OBJECT_LIFETIME_WEAK) != OBJECT_LIFETIME_WEAK) {
+            &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (refs-&amp;gt;mDestroyer) {
+                refs-&amp;gt;mDestroyer-&amp;gt;destroy(&lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;);
+            } &lt;span style=&#34;color: #0000ff&#34;&gt;else&lt;/span&gt; {
+                &lt;span style=&#34;color: #0000ff&#34;&gt;delete&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;this&lt;/span&gt;;
+            }
+        }
+    }
+    refs-&amp;gt;removeWeakRef(id);
+    refs-&amp;gt;decWeak(id);
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;完整代码：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://android.googlesource.com/platform/frameworks/base/+/gingerbread/include/utils/RefBase.h&#34;&gt;RefBase.h&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://android.googlesource.com/platform/frameworks/base/+/gingerbread/libs/utils/RefBase.cpp&#34;&gt;RefBase.cpp&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>baselineAligned属性</title>
+      <link>http://boxcounter.com/technique/2015-09-01-baselineAligned/</link>
+      <pubDate>Tue, 01 Sep 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2015-09-01-baselineAligned/</guid>
+      <description>&lt;p&gt;在使用LinearLayout+TextView的过程中遇到一个看似诡异的问题，显示效果如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-09-01/baselineAligned.png&#34; width=&#34;300&#34;/&gt;&lt;/p&gt;
+
+&lt;p&gt;其中两个灰色方块是使用代码动态创建的TextView。它们的父LinearLayout是这样的：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout
+    android:id=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;@+id/ll_files&amp;quot;&lt;/span&gt;
+    android:layout_width=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;wrap_content&amp;quot;&lt;/span&gt;
+    android:layout_height=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;100dp&amp;quot;&lt;/span&gt;
+    android:layout_marginTop=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;7.5dp&amp;quot;&lt;/span&gt;
+    android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt;
+    /&amp;gt;
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;不知道是什么原因，导致第一个TextView「下挫」了一些。仔细检查了它的margin和padding都是0、符合预期，但top是29。&lt;/p&gt;
+
+&lt;p&gt;仔细阅读了一遍代码和布局文件，确定我并没有误调整top，那么问题应该出现在动态layout过程中。那就开始调试分析吧。&lt;/p&gt;
+
+&lt;p&gt;顺着LinearLayout.onLayout()追踪到了LinearLayout.layoutHorizontal()，发现了这样一段代码：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; layoutHorizontal(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; left, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; top, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; right, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; bottom) {
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+    
+    &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; childBaseline = -1;
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;final&lt;/span&gt; LinearLayout.LayoutParams lp =
+            (LinearLayout.LayoutParams) child.getLayoutParams();
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (baselineAligned &amp;amp;&amp;amp; lp.height != LayoutParams.MATCH_PARENT) {
+        childBaseline = child.getBaseline();
+    }
+    
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+    
+    &lt;span style=&#34;color: #0000ff&#34;&gt;switch&lt;/span&gt; (gravity &amp;amp; Gravity.VERTICAL_GRAVITY_MASK) {
+        &lt;span style=&#34;color: #0000ff&#34;&gt;case&lt;/span&gt; Gravity.TOP:
+            childTop = paddingTop + lp.topMargin;
+            &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (childBaseline != -1) {
+                childTop += maxAscent[INDEX_TOP] - childBaseline;  &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;==== A&lt;/span&gt;
+            }
+            &lt;span style=&#34;color: #0000ff&#34;&gt;break&lt;/span&gt;;
+    
+    &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;当执行完A行时，childTop等于29。问题出在这里，再反向阅读代码，跟踪到了两个关键变量：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;baselineAligned为true；&lt;/li&gt;
+&lt;li&gt;childBaseline不为0；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;这时我想起文本的&lt;a href=&#34;https://zh.wikipedia.org/wiki/%E5%9F%BA%E7%B7%9A&#34;&gt;baseline属性&lt;/a&gt;。&lt;/p&gt;
+
+&lt;p&gt;继续查阅文档、代码，得到两个结论：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;LinearLayout的baselineAligned默认为true；&lt;/li&gt;
+&lt;li&gt;TextView重写了getBaseline()，返回了有效值；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;定位了问题症结，解决方案也就不难找了：将LinearLayout的android:baselineAligned改为false。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>ImageView.ScaleType</title>
+      <link>http://boxcounter.com/technique/2015-08-13-ImageView-ScaleType/</link>
+      <pubDate>Thu, 13 Aug 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2015-08-13-ImageView-ScaleType/</guid>
+      <description>&lt;p&gt;开启了「Show layout bounds」。左侧是宽图、右侧是竖图：&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-08-13/scaleTypeHorizontal.png&#34;  width=&#34;500&#34;/&gt;
+&lt;img src=&#34;http://boxcounter.com/images/2015-08-13/scaleTypeVertical.png&#34;  width=&#34;500&#34;/&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>《从来就没有救世主》读书笔记</title>
+      <link>http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</link>
+      <pubDate>Sat, 08 Aug 2015 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</guid>
+      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-08-08/从来就没有救世主.png&#34;/&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2015-08-08/%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB.mindnode.zip&#34;&gt;从来就没有救世主.mindnode&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>Android下列表视图的性能优化</title>
       <link>http://boxcounter.com/technique/2015-08-01-Android%E4%B8%8B%E5%88%97%E8%A1%A8%E8%A7%86%E5%9B%BE%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/</link>
       <pubDate>Sat, 01 Aug 2015 00:00:00 +0000</pubDate>
@@ -1334,6 +1334,80 @@
     </item>
     
     <item>
+      <title>一起疑似内存泄漏</title>
+      <link>http://boxcounter.com/technique/2014-01-12-suspected-memory-leak/</link>
+      <pubDate>Sun, 12 Jan 2014 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2014-01-12-suspected-memory-leak/</guid>
+      <description>&lt;p&gt;上周遇到一起极其诡异的内存泄漏。现象是：&lt;br /&gt;
+某种测试方法可以使程序物理内存使用量（top命令的RES列）持续上升。当停止测试之后，程序内存使用量稳定在测试过程中的最高值不变。从现象上看就是一典型的内存泄漏。&lt;/p&gt;
+
+&lt;p&gt;我的诊断步骤：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;使用valgrind的memcheck检查泄漏。故障重现后让程序自然退出。memcheck提示资源泄漏量为0.&lt;br /&gt;
+所以，该内存应该没有被泄漏，程序中对它们还有引用，在程序退出时被正常释放掉了。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;使用valgrind的massif分析内存使用。找到了一处可疑的「泄漏」点，90%的内存都是在该处分配。&lt;br /&gt;
+但是调试发现该处分配（通过malloc）的内存都被正确的释放（通过free）掉了。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;使用malloc_info函数查看程序运行过程中的内存情况。
+这是在程序物理内存占用2G后我停止测试以后一段时间（大概5分钟）的输出：&lt;/p&gt;
+
+&lt;p&gt;arena(462848), ordblks(2), smblks(1), hblks(5), hblkhd(104857600), usmblks(0), fsmblks(32), uordblks(459424), fordblks(3424), keepcost(3360).&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;从上面看，从heap中申请了462848(arena的值，约46KB)，mmap申请的内存是104857600（hblkhd的值，约100MB）。这俩值加在一起和top里显示的2G差很远啊。
+   注，arena和hblkhd的man注解：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; arena   The total amount of memory allocated by means other than
+         mmap(2) (i.e., memory allocated on the heap).  This figure
+         includes both in-use blocks and blocks on the free list.
+ hblkhd  The number of bytes in blocks currently allocated using
+         mmap(2).
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;决定统计内存分配释放的次数和尺寸，目的是检查是否严重失衡。因为new/delete不太好跟踪，所以只处理了malloc/free。&lt;br /&gt;
+使用的方法是wrap（gcc/g++的「-Wl,&amp;ndash;wrap,malloc」选项），看了一眼glibc的源码，以在free时候得到待释放内存的尺寸。最后的结果是没有严重失衡，应该不是显式的内存释放。&lt;br /&gt;
+其实这个实验原本就没有报很大的希望，一来new/delete没有照顾到，不够精确。二来如果是显式的泄漏memcheck早就报告了。但是当时没有思路了，姑且一试，看能不能找到点面包屑。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;搜索了一些资料。有些提到glibc内部使用brk和mmap来进行内存分配，其中brk可能会造成这种泄漏假象。&lt;br /&gt;
+于是在程序的开始设置了M_MMAP_THRESHOLD，发现故障依然存在。&lt;/p&gt;
+
+&lt;p&gt;mallopt(M_MMAP_THRESHOLD, 1024*1024*1024); // 1G&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;原本还想在不同的模块里使用不同的堆，然后反复根据堆的尺寸细分堆，来精确定位。却发现linux下没有类似HeapCreate的函数。&lt;/p&gt;
+
+&lt;p&gt;技穷了。于是我邀请一位同事来协助分析，在协作中我发现我犯了个错误：尝试方法5的时候，我理解反了M_MMAP_THRESHOLD的含义，于是提供错了参数。实际上应该是这样：&lt;/p&gt;
+
+&lt;p&gt;mallopt(M_MMAP_THRESHOLD, 0);&lt;/p&gt;
+
+&lt;p&gt;然后故障消失了。也就是说，这次的故障实际并不是我们程序实现的资源泄漏，而是glibc堆管理机制导致的「资源泄漏」。我很奇怪为什么glibc没有重用程序调用free释放掉的空间，而是继续扩充堆。这个问题值得继续琢磨。&lt;/p&gt;
+
+&lt;p&gt;总结：本次故障的分析过程里我的粗心大意又给自己惹了大麻烦。原本思路是正确的，结果走歪了。。。 自作孽啊。。。&lt;/p&gt;
+
+&lt;p&gt;但是，即便这个故障不是程序实现BUG所导致的，实际上还是会对程序造成不好的影响：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;如果调整M_MMAP_THRESHOLD让程序不「泄漏」，那么资源占用和性能会变差。原因参考帮助文档中对该参数的描述。&lt;/li&gt;
+&lt;li&gt;如果放任不管，程序会不停地吃内存，并且占住不释放。我尝试让程序持续吃内存，最后稳定在3GB的物理内存（共4G）和2.6G的swap空间（共4G）的消耗。（但没有被oom killer干掉）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;再琢磨琢磨吧。&lt;/p&gt;
+
+&lt;p&gt;最后，感谢我的同事cntrump。并附上《代码大全》里的一段话，我前些天重温的时候才看过：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;23.2 &lt;strong&gt;寻找缺陷&lt;/strong&gt; - &lt;em&gt;同他人讨论问题&lt;/em&gt;&lt;br /&gt;
+　　有人会把这种方法称之为“忏悔式调试”。当你向别人解释自己的程序时，常常能发现自己犯下的一些错误。举个例子，如果你向别人解释上面的关于薪水的例子，你或许会这样对别人说：&lt;br /&gt;
+　　嗨，jennifer，你有空么？我现在遇到一个麻烦。这张员工薪水列表本来应当是按照顺序排列的，但里面有些名字乱序了。我原本打算看看是不是新输入的名字就会这种情况，但有时是对的，有时又不是。我向这些数据在我输入他们的时候就应当被排序，因为程序会在我输入数据的时候对其排序，然后在数据保存的时候再排一遍。等一下，不对，它没有在输入数据的时候对其排序。就是这里。程序只是粗略地对这些数据进行了排序。谢谢你，jennifer，你帮了我个大忙。&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
       <title>隔栏、断言、防御型和攻击型编程的思考</title>
       <link>http://boxcounter.com/technique/2014-01-12-assert-defensive-offensive-programming/</link>
       <pubDate>Sun, 12 Jan 2014 00:00:00 +0000</pubDate>
@@ -1456,80 +1530,6 @@
 &lt;li&gt;v1.0 - 2014-01-05, 初始发布。&lt;/li&gt;
 &lt;li&gt;v1.1 - 2014-01-12, 增加了隔栏处的新思考。&lt;/li&gt;
 &lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>一起疑似内存泄漏</title>
-      <link>http://boxcounter.com/technique/2014-01-12-suspected-memory-leak/</link>
-      <pubDate>Sun, 12 Jan 2014 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2014-01-12-suspected-memory-leak/</guid>
-      <description>&lt;p&gt;上周遇到一起极其诡异的内存泄漏。现象是：&lt;br /&gt;
-某种测试方法可以使程序物理内存使用量（top命令的RES列）持续上升。当停止测试之后，程序内存使用量稳定在测试过程中的最高值不变。从现象上看就是一典型的内存泄漏。&lt;/p&gt;
-
-&lt;p&gt;我的诊断步骤：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;&lt;p&gt;使用valgrind的memcheck检查泄漏。故障重现后让程序自然退出。memcheck提示资源泄漏量为0.&lt;br /&gt;
-所以，该内存应该没有被泄漏，程序中对它们还有引用，在程序退出时被正常释放掉了。&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;使用valgrind的massif分析内存使用。找到了一处可疑的「泄漏」点，90%的内存都是在该处分配。&lt;br /&gt;
-但是调试发现该处分配（通过malloc）的内存都被正确的释放（通过free）掉了。&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;使用malloc_info函数查看程序运行过程中的内存情况。
-这是在程序物理内存占用2G后我停止测试以后一段时间（大概5分钟）的输出：&lt;/p&gt;
-
-&lt;p&gt;arena(462848), ordblks(2), smblks(1), hblks(5), hblkhd(104857600), usmblks(0), fsmblks(32), uordblks(459424), fordblks(3424), keepcost(3360).&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;从上面看，从heap中申请了462848(arena的值，约46KB)，mmap申请的内存是104857600（hblkhd的值，约100MB）。这俩值加在一起和top里显示的2G差很远啊。
-   注，arena和hblkhd的man注解：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt; arena   The total amount of memory allocated by means other than
-         mmap(2) (i.e., memory allocated on the heap).  This figure
-         includes both in-use blocks and blocks on the free list.
- hblkhd  The number of bytes in blocks currently allocated using
-         mmap(2).
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ol&gt;
-&lt;li&gt;&lt;p&gt;决定统计内存分配释放的次数和尺寸，目的是检查是否严重失衡。因为new/delete不太好跟踪，所以只处理了malloc/free。&lt;br /&gt;
-使用的方法是wrap（gcc/g++的「-Wl,&amp;ndash;wrap,malloc」选项），看了一眼glibc的源码，以在free时候得到待释放内存的尺寸。最后的结果是没有严重失衡，应该不是显式的内存释放。&lt;br /&gt;
-其实这个实验原本就没有报很大的希望，一来new/delete没有照顾到，不够精确。二来如果是显式的泄漏memcheck早就报告了。但是当时没有思路了，姑且一试，看能不能找到点面包屑。&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;搜索了一些资料。有些提到glibc内部使用brk和mmap来进行内存分配，其中brk可能会造成这种泄漏假象。&lt;br /&gt;
-于是在程序的开始设置了M_MMAP_THRESHOLD，发现故障依然存在。&lt;/p&gt;
-
-&lt;p&gt;mallopt(M_MMAP_THRESHOLD, 1024*1024*1024); // 1G&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;原本还想在不同的模块里使用不同的堆，然后反复根据堆的尺寸细分堆，来精确定位。却发现linux下没有类似HeapCreate的函数。&lt;/p&gt;
-
-&lt;p&gt;技穷了。于是我邀请一位同事来协助分析，在协作中我发现我犯了个错误：尝试方法5的时候，我理解反了M_MMAP_THRESHOLD的含义，于是提供错了参数。实际上应该是这样：&lt;/p&gt;
-
-&lt;p&gt;mallopt(M_MMAP_THRESHOLD, 0);&lt;/p&gt;
-
-&lt;p&gt;然后故障消失了。也就是说，这次的故障实际并不是我们程序实现的资源泄漏，而是glibc堆管理机制导致的「资源泄漏」。我很奇怪为什么glibc没有重用程序调用free释放掉的空间，而是继续扩充堆。这个问题值得继续琢磨。&lt;/p&gt;
-
-&lt;p&gt;总结：本次故障的分析过程里我的粗心大意又给自己惹了大麻烦。原本思路是正确的，结果走歪了。。。 自作孽啊。。。&lt;/p&gt;
-
-&lt;p&gt;但是，即便这个故障不是程序实现BUG所导致的，实际上还是会对程序造成不好的影响：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;如果调整M_MMAP_THRESHOLD让程序不「泄漏」，那么资源占用和性能会变差。原因参考帮助文档中对该参数的描述。&lt;/li&gt;
-&lt;li&gt;如果放任不管，程序会不停地吃内存，并且占住不释放。我尝试让程序持续吃内存，最后稳定在3GB的物理内存（共4G）和2.6G的swap空间（共4G）的消耗。（但没有被oom killer干掉）&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;再琢磨琢磨吧。&lt;/p&gt;
-
-&lt;p&gt;最后，感谢我的同事cntrump。并附上《代码大全》里的一段话，我前些天重温的时候才看过：&lt;/p&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;23.2 &lt;strong&gt;寻找缺陷&lt;/strong&gt; - &lt;em&gt;同他人讨论问题&lt;/em&gt;&lt;br /&gt;
-　　有人会把这种方法称之为“忏悔式调试”。当你向别人解释自己的程序时，常常能发现自己犯下的一些错误。举个例子，如果你向别人解释上面的关于薪水的例子，你或许会这样对别人说：&lt;br /&gt;
-　　嗨，jennifer，你有空么？我现在遇到一个麻烦。这张员工薪水列表本来应当是按照顺序排列的，但里面有些名字乱序了。我原本打算看看是不是新输入的名字就会这种情况，但有时是对的，有时又不是。我向这些数据在我输入他们的时候就应当被排序，因为程序会在我输入数据的时候对其排序，然后在数据保存的时候再排一遍。等一下，不对，它没有在输入数据的时候对其排序。就是这里。程序只是粗略地对这些数据进行了排序。谢谢你，jennifer，你帮了我个大忙。&lt;/p&gt;
-&lt;/blockquote&gt;
 </description>
     </item>
     
