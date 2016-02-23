@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Boxcounter的烂笔头</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="stylesheet" href="/css/bootstrap.min.css" media="screen">
+    <link rel="stylesheet" href="/css/hugo-bootswatch.css">
+  </head>
+  <body>
+
+    <div class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a href="/" class="navbar-brand">Boxcounter的烂笔头</a>
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+          <ul class="nav navbar-nav navbar-right">
+           <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="sections">Sections<span class="caret"></span></a>
+              <ul class="dropdown-menu" aria-labelledby="download">
+              
+                <li><a href="/essay">essay</a></li>
+              
+                <li><a href="/technique">technique</a></li>
+              
+              </ul>
+            </li> 
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+        <h1><a href="http://boxcounter.com/essay/2016-01-27-Android-MVP/">Android下的MVP开发模式</a></h1>
+        <hr />
+        <span class="post-time">2016-01-27</span>
+        <div class="post">
+            
+
+<p>如题所述，这是一篇记录我在Android开发中对MVP模式的思考。MVP相关资料数不胜数，Android下的MVP开发博文也不少。但多是讲what、how，甚少提及why。所以在实际应用过程中，很容易出现误解和走形。所以我认为写下这篇思考记录是有意义的，而非单纯的造车轮子。</p>
+
+<h1 id="mvp开发模式的定义:93c604ea832c05738eb6299ed8833b6a">MVP开发模式的定义</h1>
+
+<p>先来看看<a href="https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter#Pattern_description">维基百科上MVP的组件职责</a></p>
+
+<ul>
+<li>The <strong>model</strong> is an interface defining the data to be displayed or otherwise acted upon in the user interface.</li>
+<li>The <strong>presenter</strong> acts upon the model and the view. It retrieves data from repositories (the model), and formats it for display in the view.</li>
+<li>The <strong>view</strong> is a passive interface that displays data (the model) and routes user commands (events) to the presenter to act upon that data.</li>
+</ul>
+
+<p>看似各组件职能划分地很干净，但太『虚』。怎么把上述三组件的划分应用到手头上的项目里呢？我猜有部分同好会感觉不知道从何下手，另有部分同好会觉得方案很多，不确定哪种才复合纯粹的MVP模式。</p>
+
+<p>其实，不管是哪一种情况，背后的实质都是因为这种教材式的MVP介绍太抽象。也因为此，不管是MVC还是MVP，现如今都有很多变种。</p>
+
+<p>我希望能通过这篇博文让MVP开发模式能实实在在的落在Android下的常见开发场景中。但因为个人能力原因所限，所述内容仅供同好参考，非常欢迎一起讨论。</p>
+
+<h1 id="讲解环境介绍:93c604ea832c05738eb6299ed8833b6a">讲解环境介绍</h1>
+
+<p>我们先来看一个很简单的Android应用：只有一个MainActivity，其布局上只有一个Button，点击它会发送一条消息（给某个朋友，具体细节可以忽略）。</p>
+
+<p>按照主流的Android下MVP的组件划分，应该会分成这几样：</p>
+
+<ul>
+<li>Modal: 新建的一个MainActivityModal类，包含send()方法；</li>
+<li>Presenter: 新建的一个MainActivityPresenter类。从View接受用户响应并将具体的发送（业务逻辑）交给Modal完成；</li>
+<li>View: 就是MainActivity。负责设置button的click listener，在其中调用Presenter的方法；</li>
+</ul>
+
+<p>乍一看上，好像模块划分的很标准，但这只是第一步，很多细节问题都没有暴露出来。我们来看看几个常见问题。</p>
+
+<h1 id="问题1:93c604ea832c05738eb6299ed8833b6a">问题1</h1>
+
+<p>问题1：Presenter对View暴露的什么层次的方法。比如：当用户点击Button时，View应该调用Presenter.sendMessage()还是Presenter.handleButtonClick()？（同好可以在这里停顿一下，想一想你会怎么选择，为什么这么选择）</p>
+
+<p>我的做法：View调用Presenter.handleButtonClick()。</p>
+
+<p>我的思路：</p>
+
+<ol>
+<li>从click到sendMessage，这个过程实际上是一种业务逻辑判定。而View应该只负责UI相关的<strong>展现</strong>（为什么要强调？）功能，不负责逻辑。所以P应该提供的时handleButtonClick()（为什么不叫onButtonClick？）；</li>
+<li>当对交互有调整时，P暴露handleButtonClick可以更好的重用。比如，现在改为点击Button后需要弹出确认提示框，用户点击确认后才发送。如果P暴露的时sendMessage方法，那么弹出dialog、响应『确认』、『取消』的代码就需要放在View中。而MVP中，P是重用度比V高很多，经常出现一个P服务于多个不同的V，所以把dialog相关逻辑放在P中有更好的可重用性（dialog是UI组件，这样安排岂不是把一部分UI展示功能分散到了P中？）；</li>
+</ol>
+
+<p>到这里，部分同好可能有些晕了。没关系，以上是纯文字讲解，只是为了简要说明问题。大家可以发现，MVP组件的职能划分在高度抽象时很容易做到，但一旦要落到具体项目逻辑实处，就遇到细节问题。但追根溯源，困难集中在两点：各个组件到底负责什么？怎样设定组件之间的接口（抽象名词，并不是指java关键字interface）？</p>
+
+<p>在这里我先提出我的回答：</p>
+
+<p>职能划分：</p>
+
+<ul>
+<li>M: 负责『业务逻辑执行』。比如调用网络库（如volley）发送请求；</li>
+<li>P: 负责『交互逻辑』和『业务逻辑分派（dispatch）』；</li>
+<li>V: 负责『交互』；</li>
+</ul>
+
+<p>这里需要解释两个关键词定义：</p>
+
+<ul>
+<li>交互逻辑：P收到V传来的交互请求后（比如用户点击Button），继续进行的交互操作流程（比如弹出dialog）；</li>
+<li>业务逻辑分派：P收到V传来的交互请求后，如果判定这个交互请求所对应的是业务逻辑（比如用户点击了dialog的『确定』按钮），就转交给Modal处理；</li>
+</ul>
+
+<p>如果套用回样例工程，应该是这样：</p>
+
+<ul>
+<li>MainActivityModal：提供send()方法，调用网络库（比如volley）发送请求到服务器；</li>
+<li>MainActivityPresenter：提供handleButtonClick()方法，弹出dialog，并设置『确定』按钮的响应方法是调用MessageModal.send()；</li>
+<li>MainActivity：设定Button的ClickListener，在其中调用MainActivityPresenter.handleButtonClick()；</li>
+</ul>
+
+<p>前面我提出了一个问题：如果把dialog相关逻辑放在Presenter中，岂不是让Presenter也负责了交互？</p>
+
+<p>没错，确实有这个问题。如果参照前面的职能划分，只有V负责交互。怎么办？答：把dialog逻辑拆分为『交互』和『业务逻辑分派』，前者放回到V，后者留在P。</p>
+
+<p>我们来看一下代码，当点击Button就直接发送消息时，代码是这样的：</p>
+
+<pre><code class="language-java">public class MainActivityModal {
+    public void send(String text) {
+        // TODO
+    }
+}
+
+public class MainActivityPresenter {
+    private MainActivityModal mModal;
+
+    public void handleButtonClick(final String text) {
+        mModal.send(text);
+    }
+}
+
+public class MainActivity {
+    private MainActivityPresenter mPresenter;
+
+    private void setUpSendButton() {
+        Button button = (Button) findViewById(R.id.btn_send);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPresenter.handleButtonClick(&quot;boxcounter.com&quot;);
+            }
+        });
+    }
+}
+</code></pre>
+
+<p>当点击Button需要弹出确认提示框时，代码是这样的：</p>
+
+<pre><code class="language-java">public class MainActivityModal {
+    public void send(String text) {
+        // TODO
+    }
+}
+
+public class MainActivityPresenter {
+    private MainActivity mView;
+    private MainActivityModal mModal;
+
+    public void handleButtonClick(final String text) {
+        mView.showQueryDialog(R.string.alert_send, new Runnable() {
+            @Override
+            public void run() {
+                mModal.send(text);
+            }
+        });
+    }
+}
+
+public class MainActivity {
+    private MainActivityPresenter mPresenter;
+
+    @Override
+    public void showQueryDialog(@StringRes int messageResId, final Runnable positiveHandler) {
+        new AlertDialog.Builder(this)
+                .setMessage(messageResId)
+                .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                        positiveHandler.run();
+                    }
+                })
+                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .show();
+    }
+
+    private void setUpSendButton() {
+        Button button = (Button) findViewById(R.id.btn_send);
+        button.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                mPresenter.handleButtonClick(&quot;boxcounter.com&quot;);
+            }
+        });
+    }
+} 
+</code></pre>
+
+<p>通过这样的拆分，M、V、P就可以各尽其职了。</p>
+
+<h1 id="问题:93c604ea832c05738eb6299ed8833b6a">问题</h1>
+
+<ul>
+<li>Fragment、Activity、Contenxt污染Presenter</li>
+<li>Activity/Fragment启动的方式（ShareElement）、参数不同。当一个View的多个child对应着启动不同的Activity，怎么交给View来处理;</li>
+</ul>
+
+<h1 id="重新整理:93c604ea832c05738eb6299ed8833b6a">重新整理</h1>
+
+<h1 id="android的设计缺陷:93c604ea832c05738eb6299ed8833b6a">Android的设计缺陷</h1>
+
+        </div>
+
+              <footer>
+        <nav class="navbar navbar-default">
+          <div class="container-fluid">
+            <div class="collapse navbar-collapse">
+              <ul class="nav navbar-nav">
+                <li><a href="http://gohugo.io">Hugo</a></li>
+                <li><a href="http://bootswatch.com">Bootswatch</a></li>
+                <li><a href="http://getbootstrap.com">Bootstrap</a></li>
+              </ul>
+              <ul class="nav navbar-nav navbar-right">
+                <li class="pull-right"><a href="#top">Back to top</a></li>
+              </ul>
+            </div>
+          </nav>
+        </div>
+      </footer>
+
+
+     </div>
+
+        <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+        <script src="/js/bootstrap.min.js"></script>
+        <script src="/js/bootswatch.js"></script>
+    </body>
+</html>
+
+
