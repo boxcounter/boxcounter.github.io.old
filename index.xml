@@ -24,193 +24,6 @@
     </item>
     
     <item>
-      <title>Android下的MVP开发模式</title>
-      <link>http://boxcounter.com/essay/2016-01-27-Android-MVP/</link>
-      <pubDate>Wed, 27 Jan 2016 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2016-01-27-Android-MVP/</guid>
-      <description>
-
-&lt;p&gt;如题所述，这是一篇记录我在Android开发中对MVP模式的思考。MVP相关资料数不胜数，Android下的MVP开发博文也不少。但多是讲what、how，甚少提及why。所以在实际应用过程中，很容易出现误解和走形。所以我认为写下这篇思考记录是有意义的，而非单纯的造车轮子。&lt;/p&gt;
-
-&lt;h1 id=&#34;mvp开发模式的定义:93c604ea832c05738eb6299ed8833b6a&#34;&gt;MVP开发模式的定义&lt;/h1&gt;
-
-&lt;p&gt;先来看看&lt;a href=&#34;https://en.wikipedia.org/wiki/Model%E2%80%93view%E2%80%93presenter#Pattern_description&#34;&gt;维基百科上MVP的组件职责&lt;/a&gt;&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;The &lt;strong&gt;model&lt;/strong&gt; is an interface defining the data to be displayed or otherwise acted upon in the user interface.&lt;/li&gt;
-&lt;li&gt;The &lt;strong&gt;presenter&lt;/strong&gt; acts upon the model and the view. It retrieves data from repositories (the model), and formats it for display in the view.&lt;/li&gt;
-&lt;li&gt;The &lt;strong&gt;view&lt;/strong&gt; is a passive interface that displays data (the model) and routes user commands (events) to the presenter to act upon that data.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;看似各组件职能划分地很干净，但太『虚』。怎么把上述三组件的划分应用到手头上的项目里呢？我猜有部分同好会感觉不知道从何下手，另有部分同好会觉得方案很多，不确定哪种才复合纯粹的MVP模式。&lt;/p&gt;
-
-&lt;p&gt;其实，不管是哪一种情况，背后的实质都是因为这种教材式的MVP介绍太抽象。也因为此，不管是MVC还是MVP，现如今都有很多变种。&lt;/p&gt;
-
-&lt;p&gt;我希望能通过这篇博文让MVP开发模式能实实在在的落在Android下的常见开发场景中。但因为个人能力原因所限，所述内容仅供同好参考，非常欢迎一起讨论。&lt;/p&gt;
-
-&lt;h1 id=&#34;讲解环境介绍:93c604ea832c05738eb6299ed8833b6a&#34;&gt;讲解环境介绍&lt;/h1&gt;
-
-&lt;p&gt;我们先来看一个很简单的Android应用：只有一个MainActivity，其布局上只有一个Button，点击它会发送一条消息（给某个朋友，具体细节可以忽略）。&lt;/p&gt;
-
-&lt;p&gt;按照主流的Android下MVP的组件划分，应该会分成这几样：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Modal: 新建的一个MainActivityModal类，包含send()方法；&lt;/li&gt;
-&lt;li&gt;Presenter: 新建的一个MainActivityPresenter类。从View接受用户响应并将具体的发送（业务逻辑）交给Modal完成；&lt;/li&gt;
-&lt;li&gt;View: 就是MainActivity。负责设置button的click listener，在其中调用Presenter的方法；&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;乍一看上，好像模块划分的很标准，但这只是第一步，很多细节问题都没有暴露出来。我们来看看几个常见问题。&lt;/p&gt;
-
-&lt;h1 id=&#34;问题1:93c604ea832c05738eb6299ed8833b6a&#34;&gt;问题1&lt;/h1&gt;
-
-&lt;p&gt;问题1：Presenter对View暴露的什么层次的方法。比如：当用户点击Button时，View应该调用Presenter.sendMessage()还是Presenter.handleButtonClick()？（同好可以在这里停顿一下，想一想你会怎么选择，为什么这么选择）&lt;/p&gt;
-
-&lt;p&gt;我的做法：View调用Presenter.handleButtonClick()。&lt;/p&gt;
-
-&lt;p&gt;我的思路：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;从click到sendMessage，这个过程实际上是一种业务逻辑判定。而View应该只负责UI相关的&lt;strong&gt;展现&lt;/strong&gt;（为什么要强调？）功能，不负责逻辑。所以P应该提供的时handleButtonClick()（为什么不叫onButtonClick？）；&lt;/li&gt;
-&lt;li&gt;当对交互有调整时，P暴露handleButtonClick可以更好的重用。比如，现在改为点击Button后需要弹出确认提示框，用户点击确认后才发送。如果P暴露的时sendMessage方法，那么弹出dialog、响应『确认』、『取消』的代码就需要放在View中。而MVP中，P是重用度比V高很多，经常出现一个P服务于多个不同的V，所以把dialog相关逻辑放在P中有更好的可重用性（dialog是UI组件，这样安排岂不是把一部分UI展示功能分散到了P中？）；&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;到这里，部分同好可能有些晕了。没关系，以上是纯文字讲解，只是为了简要说明问题。大家可以发现，MVP组件的职能划分在高度抽象时很容易做到，但一旦要落到具体项目逻辑实处，就遇到细节问题。但追根溯源，困难集中在两点：各个组件到底负责什么？怎样设定组件之间的接口（抽象名词，并不是指java关键字interface）？&lt;/p&gt;
-
-&lt;p&gt;在这里我先提出我的回答：&lt;/p&gt;
-
-&lt;p&gt;职能划分：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;M: 负责『业务逻辑执行』。比如调用网络库（如volley）发送请求；&lt;/li&gt;
-&lt;li&gt;P: 负责『交互逻辑』和『业务逻辑分派（dispatch）』；&lt;/li&gt;
-&lt;li&gt;V: 负责『交互』；&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;这里需要解释两个关键词定义：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;交互逻辑：P收到V传来的交互请求后（比如用户点击Button），继续进行的交互操作流程（比如弹出dialog）；&lt;/li&gt;
-&lt;li&gt;业务逻辑分派：P收到V传来的交互请求后，如果判定这个交互请求所对应的是业务逻辑（比如用户点击了dialog的『确定』按钮），就转交给Modal处理；&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;如果套用回样例工程，应该是这样：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;MainActivityModal：提供send()方法，调用网络库（比如volley）发送请求到服务器；&lt;/li&gt;
-&lt;li&gt;MainActivityPresenter：提供handleButtonClick()方法，弹出dialog，并设置『确定』按钮的响应方法是调用MessageModal.send()；&lt;/li&gt;
-&lt;li&gt;MainActivity：设定Button的ClickListener，在其中调用MainActivityPresenter.handleButtonClick()；&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;前面我提出了一个问题：如果把dialog相关逻辑放在Presenter中，岂不是让Presenter也负责了交互？&lt;/p&gt;
-
-&lt;p&gt;没错，确实有这个问题。如果参照前面的职能划分，只有V负责交互。怎么办？答：把dialog逻辑拆分为『交互』和『业务逻辑分派』，前者放回到V，后者留在P。&lt;/p&gt;
-
-&lt;p&gt;我们来看一下代码，当点击Button就直接发送消息时，代码是这样的：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;public class MainActivityModal {
-    public void send(String text) {
-        // TODO
-    }
-}
-
-public class MainActivityPresenter {
-    private MainActivityModal mModal;
-
-    public void handleButtonClick(final String text) {
-        mModal.send(text);
-    }
-}
-
-public class MainActivity {
-    private MainActivityPresenter mPresenter;
-
-    private void setUpSendButton() {
-        Button button = (Button) findViewById(R.id.btn_send);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mPresenter.handleButtonClick(&amp;quot;boxcounter.com&amp;quot;);
-            }
-        });
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;当点击Button需要弹出确认提示框时，代码是这样的：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-java&#34;&gt;public class MainActivityModal {
-    public void send(String text) {
-        // TODO
-    }
-}
-
-public class MainActivityPresenter {
-    private MainActivity mView;
-    private MainActivityModal mModal;
-
-    public void handleButtonClick(final String text) {
-        mView.showQueryDialog(R.string.alert_send, new Runnable() {
-            @Override
-            public void run() {
-                mModal.send(text);
-            }
-        });
-    }
-}
-
-public class MainActivity {
-    private MainActivityPresenter mPresenter;
-
-    @Override
-    public void showQueryDialog(@StringRes int messageResId, final Runnable positiveHandler) {
-        new AlertDialog.Builder(this)
-                .setMessage(messageResId)
-                .setPositiveButton(R.string.confirm, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                        positiveHandler.run();
-                    }
-                })
-                .setNegativeButton(R.string.cancel, new DialogInterface.OnClickListener() {
-                    @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        dialog.dismiss();
-                    }
-                })
-                .show();
-    }
-
-    private void setUpSendButton() {
-        Button button = (Button) findViewById(R.id.btn_send);
-        button.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mPresenter.handleButtonClick(&amp;quot;boxcounter.com&amp;quot;);
-            }
-        });
-    }
-} 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;通过这样的拆分，M、V、P就可以各尽其职了。&lt;/p&gt;
-
-&lt;h1 id=&#34;问题:93c604ea832c05738eb6299ed8833b6a&#34;&gt;问题&lt;/h1&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Fragment、Activity、Contenxt污染Presenter&lt;/li&gt;
-&lt;li&gt;Activity/Fragment启动的方式（ShareElement）、参数不同。当一个View的多个child对应着启动不同的Activity，怎么交给View来处理;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1 id=&#34;重新整理:93c604ea832c05738eb6299ed8833b6a&#34;&gt;重新整理&lt;/h1&gt;
-
-&lt;h1 id=&#34;android的设计缺陷:93c604ea832c05738eb6299ed8833b6a&#34;&gt;Android的设计缺陷&lt;/h1&gt;
-</description>
-    </item>
-    
-    <item>
       <title>书单</title>
       <link>http://boxcounter.com/essay/2015-12-31-%E4%B9%A6%E5%8D%95/</link>
       <pubDate>Thu, 31 Dec 2015 00:00:00 +0000</pubDate>
@@ -2353,6 +2166,155 @@ Path `/tmp/antos/boot/grub&#39; is not readable by GRUB on boot. Installation is
 &lt;/ul&gt;
 
 &lt;p&gt;本文的pdf版：&lt;a href=&#34;http://boxcounter.com/attachments/2013-11-14/linux、osx下搭建操作系统开发环境的完整步骤_v1.1.pdf&#34;&gt;2013-11-14-linux、osx下搭建操作系统开发环境_v1.1&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>osx下搭建操作系统开发环境之64位交叉开发工具集（gcc&#43;gdb）v1.0</title>
+      <link>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.0/</link>
+      <pubDate>Fri, 08 Nov 2013 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.0/</guid>
+      <description>
+
+&lt;h1 id=&#34;一-前言:a48ba76a4646a20561a3efada380ccda&#34;&gt;一、前言&lt;/h1&gt;
+
+&lt;p&gt;　　《&lt;a href=&#34;http://boxcounter.com/2013/11/04/osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc+gdb%EF%BC%89v1.1&#34;&gt;osx下搭建操作系统开发环境之32位交叉开发工具集(gcc+gdb)&lt;/a&gt;》一文中讲解了32位交叉工具的构建。64位（专指x64，非IA64）的构建方法和32位基本相同。看过前文的朋友看本文会发现绝大多数内容都是一样的。没错，之所以不基于前文、只讲差异，是为了独立性，方便只关注x64构建方法的朋友。&lt;br /&gt;
+　　我的环境：osx 10.9&lt;/p&gt;
+
+&lt;h1 id=&#34;二-安装osx版的gcc:a48ba76a4646a20561a3efada380ccda&#34;&gt;二、安装osx版的gcc&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;brew install gcc48
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　推荐下载最新的稳定版gcc。&lt;/p&gt;
+
+&lt;h1 id=&#34;三-配置编译环境:a48ba76a4646a20561a3efada380ccda&#34;&gt;三、配置编译环境&lt;/h1&gt;
+
+&lt;ol&gt;
+&lt;li&gt;下载gcc源码&lt;br /&gt;
+根据参考资料1的建议，最好使用最新的gcc来进行编译，被编译的源码也推荐使用一样版本的。也就是说，用gcc 4.8.2来编译gcc 4.8.2的源码。&lt;br /&gt;
+下载&lt;a href=&#34;http://ftp.gnu.org/gnu/gcc&#34;&gt;源码包&lt;/a&gt;并解压，得到的目录名称之为“$gcc-4.8.2”。&lt;/li&gt;
+&lt;li&gt;下载gcc依赖项&lt;br /&gt;
+需要的依赖项有：
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://gnu.org/software/binutils/&#34;&gt;GNU Binutils&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://gmplib.org/&#34;&gt;GMP&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.mpfr.org/&#34;&gt;MPFR&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://multiprecision.org/&#34;&gt;MPC&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;将它们都解压出来，把解压出来的b、c、d的目录都放到gcc源码目录下。都需要去掉版本号，比如解压出来的目录名为“mpc-1.0.1”，那么现在就是“$gcc-4.8.2/mpc”。a无需这么做，因为它需要单独编译，参考后续的步骤4。&lt;br /&gt;
+   其中GMP源码包是lzip压缩格式，需要下载lzip工具解压（brew安装）。
+3. 下载gdb源码&lt;br /&gt;
+   下载&lt;a href=&#34;http://ftp.gnu.org/gnu/gdb&#34;&gt;源码包&lt;/a&gt;并解压，得到的目录名称之为“$gdb-7.6.1”。
+4. 设置环境变量&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    export CC=/usr/local/bin/gcc-4.8
+    export CXX=/usr/local/bin/g++-4.8
+    export CPP=/usr/local/bin/cpp-4.8
+    export LD=/usr/local/bin/gcc-4.8
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这些都是brew版gcc4.8.2的软链接。如果不设置，那么会使用系统中默认自带的工具，这些工具的版本可能比较老。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    export PREFIX=$HOME/opt/cross
+    export TARGET=x86_64-pc-linux-gnu
+    export PATH=&amp;quot;$PREFIX/bin:$PATH&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这些是编译时候使用的选项。需要注意的是：osdev上的《&lt;a href=&#34;http://wiki.osdev.org/GCC_Cross-Compiler_for_x86_64&#34;&gt;GCC Cross-Compiler for x86 64&lt;/a&gt;》建议将TARGET宏定义为x86_64-elf，但是我实验发现这样行不通，编译gdb的时候会报错“configure: error: configuration x86_64-pc-elf is unsupported.”。
+5. 编译交叉版的binutils&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;    cd $binutils-x.y.z
+    mkdir build-binutils
+    cd build-binutils
+    ../configure --target=$TARGET --prefix=$PREFIX --enable-64-bit-bfd --enable-werror=no
+    make
+    make install
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&#34;四-编译交叉版的gcc:a48ba76a4646a20561a3efada380ccda&#34;&gt;四、编译交叉版的gcc&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;cd $gcc-4.8.2
+mkdir build-gcc
+cd build-gcc
+../configure --target=$TARGET --prefix=&amp;quot;$PREFIX&amp;quot; --disable-nls --enable-languages=c,c++ --without-headers
+make all-gcc
+make all-target-libgcc
+make install-gcc
+make install-target-libgcc
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　完成后，在“~/opt/cross/bin”下就能看到编译好的交叉版的编译套件了，包括“x86_64-pc-linux-gnu-gcc”、“x86_64-pc-linux-gnu-g++”和“x86_64-pc-linux-gnu-ld ”等等。可以用“$HOME/opt/cross/bin/$TARGET-gcc &amp;ndash;version”来验证一下版本是否正确。&lt;br /&gt;
+　　另外，为了方便使用，可以在.bashrc或者.zshrc中调整环境变量：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;export PATH=&amp;quot;$HOME/opt/cross/bin:$PATH&amp;quot;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&#34;五-编译交叉版的gdb:a48ba76a4646a20561a3efada380ccda&#34;&gt;五、编译交叉版的gdb&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;cd $gdb-7.6.1
+mkdir build-$TARGET
+cd build-$TARGET
+../configure --target=$TARGET --prefix=&amp;quot;$PREFIX&amp;quot; --disable-nls --enable-64-bit-bfd --enable-werror=no CFLAGS=&amp;quot;-m64&amp;quot;
+make
+sudo make install
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　完成后，在“~/opt/cross/bin”下就能看到编译好的交叉版的x86_64-pc-linux-gnu-gdb了。&lt;/p&gt;
+
+&lt;p&gt;　　注：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;p&gt;和x64的bochs配合调试的时候，需要切换到x86-64模式（默认模式是i386）：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;(gdb) set architecture i386:x86-64
+The target architecture is assumed to be i386:x86-64
+&lt;/code&gt;&lt;/pre&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;在这个编译选项版本之前，我尝试了好几种其他的编译选项，虽然都能编译出gdb，但是都无法与x64的bochs进行配合调试。包括使用“../configure &amp;ndash;enable-targets=all &amp;ndash;enable-64-bit-bfd”。无法与x64的bochs进行配合调试的现象是，gdb能够下断，但是中断点都是错误的，比如：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;(gdb) target remote localhost:1234
+Remote debugging using 192.168.1.16:1234
+0x00000000 in ?? ()
+(gdb) b *0x7c00
+Breakpoint 1 at 0x7c00
+(gdb) c
+Continuing.
+Program received signal SIGTRAP, Trace/breakpoint trap.
+0x000e0000 in ?? ()
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;正常应该是这样：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;(gdb) target remote 192.168.1.16:1234
+Remote debugging using localhost:1234
+0x000000000000fff0 in ?? ()
+(gdb)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;总结，gdb的TARGET要和bochs（而非被调试OS）的平台一致，即如果使用的是x64的bochs，那么gdb的编译TARGET也需要是x64的。&lt;/p&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&#34;六-参考资料:a48ba76a4646a20561a3efada380ccda&#34;&gt;六、参考资料&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://wiki.osdev.org/GCC_Cross-Compiler&#34;&gt;GCC Cross-Compiler&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://wiki.osdev.org/GCC_Cross-Compiler_for_x86_64&#34;&gt;GCC Cross-Compiler for x86 64&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.cs.utah.edu/~manua/sim_doc/simics-reference-manual-public-all/topic96.html&#34;&gt;gdb-remote&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://sourceforge.net/p/bochs/discussion/39592/thread/a489c7f1&#34;&gt;bochs + GDB help&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&#34;七-版本记录:a48ba76a4646a20561a3efada380ccda&#34;&gt;七、版本记录&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;v1.0 - 2013-11-08，初始发布。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;本文的pdf版：&lt;a href=&#34;http://boxcounter.com/attachments/2013-11-08/osx下搭建操作系统开发环境之64位交叉开发工具集（gcc+gdb）v1.0.pdf&#34;&gt;osx下搭建操作系统开发环境之64位交叉开发工具集（gcc+gdb）v1.0.pdf&lt;/a&gt;&lt;/p&gt;
 </description>
     </item>
     
