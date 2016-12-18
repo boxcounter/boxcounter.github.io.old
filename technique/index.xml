@@ -1,23 +1,154 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Techniques on Boxcounter的烂笔头</title>
-    <link>http://boxcounter.com/technique/</link>
-    <description>Recent content in Techniques on Boxcounter的烂笔头</description>
+    <title>Technique-rsses on Boxcounter的烂笔头</title>
+    <link>http://boxcounter.com/technique/index.xml</link>
+    <description>Recent content in Technique-rsses on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sat, 05 Sep 2015 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 26 Nov 2016 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://boxcounter.com/technique/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
+      <title>Host key verification failed的另类触发</title>
+      <link>http://boxcounter.com/technique/2016-11-26-Host-key-verification-failed/</link>
+      <pubDate>Sat, 26 Nov 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2016-11-26-Host-key-verification-failed/</guid>
+      <description>
+
+&lt;p&gt;最近几天在编写、测试部署脚本，准备配合Jenkins进行自动化的持续集成，因此需要全程静默执行，未想触发了一个SSH key问题，卡了我好几个小时……&lt;/p&gt;
+
+&lt;h1 id=&#34;问题现象&#34;&gt;问题现象&lt;/h1&gt;
+
+&lt;p&gt;从GitHub上clone过仓库的码农们都知道，用SSH比HTTPs更可靠。但SSH初次连接服务器时，通常会询问是否接受连接，比如这样：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;The authenticity of host &amp;lsquo;github.com (192.30.252.1)&amp;rsquo; can&amp;rsquo;t be established.&lt;br /&gt;
+RSA key fingerprint is 16:27:ac:a5:76:28:2d:36:63:1b:56:4d:eb:df:a6:48.&lt;br /&gt;
+Are you sure you want to continue connecting (yes/no)?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;通常大家手输yes就可以继续clone代码了。而静默执行的脚本通常会在建立连接之前将目标站点保存到&lt;code&gt;known_hosts&lt;/code&gt;，以跳过询问。&lt;/p&gt;
+
+&lt;p&gt;在我的脚本里是这样的：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;ssh_dir=&amp;quot;${HOME}/.ssh&amp;quot;
+...
+ssh-keyscan -v -t rsa ssh.github.com &amp;gt; ${ssh_dir}/known_hosts
+git clone git@github.com:...
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;但诡异的是在Jenkins部署过程中并没有生效，还是在建立SSH连接时卡住然后报错「Host key verification failed」。如果打开pty选项，则会如前面那样询问是否接受连接。而在我的本地虚拟机中则完全正常、全程安静地我都不好意思。&lt;/p&gt;
+
+&lt;h1 id=&#34;初步尝试&#34;&gt;初步尝试&lt;/h1&gt;
+
+&lt;p&gt;有怀疑过：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;是不是SSH目录或其中文件的权限设置不对，导致SSH无法读取？&lt;/li&gt;
+&lt;li&gt;是不是known_hosts没有生效？格式不对？&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;搜遍资料、试遍方法，几个小时过去了，依然没有进展。眼瞅着就没法轻松过周末了……&lt;/p&gt;
+
+&lt;h1 id=&#34;新思路&#34;&gt;新思路&lt;/h1&gt;
+
+&lt;p&gt;于是换了个思路，跳过Jenkins、直接SSH到被部署服务器上，手动执行脚本：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;chmod u+x ./init.sh
+sudo ./init.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;又看到了熟悉的询问，悬着手腕琢磨接下来该怎么办，转念一想「要不yes了看看它自己能不能保存到known_hosts、保存的格式是怎样的」。动手之前先&lt;code&gt;mv known_hosts known_hosts.old&lt;/code&gt;待会好diff。&lt;/p&gt;
+
+&lt;h1 id=&#34;峰回路转&#34;&gt;峰回路转&lt;/h1&gt;
+
+&lt;p&gt;输入yes，峰回路转 —— 并没有生成known_host。&lt;/p&gt;
+
+&lt;p&gt;又陷入思考「难道权限不够？不对啊，我已经sudo了」，一想到sudo，顿时一个激灵 —— 当前是root帐号！赶紧&lt;code&gt;sudo ls -la /root/.ssh/&lt;/code&gt;，果然躺着一个known_hosts文件。&lt;/p&gt;
+
+&lt;p&gt;到此，我才弄明白问题的原因：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;因为sudo，脚本是以root帐号身份执行，会去&lt;code&gt;/root/.ssh/known_hosts&lt;/code&gt;找known_hosts；&lt;/li&gt;
+&lt;li&gt;脚本的ssh-keyscan将ssh.github.com保存进了&lt;code&gt;~/.ssh/known_hosts&lt;/code&gt;，被部署服务器使用的是非root帐号；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;SSH就没找到ssh-keyscan的结果，所以询问。而之所以在本地虚拟机里一切正常是因为我偷懒用的是root帐号。&lt;/p&gt;
+
+&lt;p&gt;再一细想，我真是糊涂，怎么会整个脚本都sudo呢，这样岂不是git clone等等命令都是以root用户身份执行了吗……&lt;/p&gt;
+
+&lt;h1 id=&#34;解决&#34;&gt;解决&lt;/h1&gt;
+
+&lt;p&gt;找到了问题症结，解决也就简单了，花了十分钟把需要权限的命令都加上sudo，&lt;code&gt;echo xxx &amp;gt; $file&lt;/code&gt;都改成&lt;code&gt;echo xxx | sudo tee $file&lt;/code&gt;，去掉Jenkins构建步骤里的sudo 。&lt;/p&gt;
+
+&lt;p&gt;Jenkins部署成功，欢度周末～&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>macOS tar的特殊行为</title>
+      <link>http://boxcounter.com/technique/2016-11-26-macOS%20tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</link>
+      <pubDate>Sat, 26 Nov 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2016-11-26-macOS%20tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</guid>
+      <description>&lt;p&gt;这周在编写自动部署脚本的过程遇到一个有趣的问题 —— 我把脚本打包成tgz文件，然后scp到被部署服务器上。解压之后发现多出来好些隐藏文件。比如下面的行1和行3：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ls ./init/letsencrypt/keys/
+._0000_key-certbot.pem
+0000_key-certbot.pem
+._0000_key-letsencrypt.pem
+0000_key-letsencrypt.pem
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;一开始我以为是系统自动生成的类似.DS_Store这样的系统文件，但&lt;code&gt;ls -al&lt;/code&gt;看了下源目录，并没有发现踪迹。然后在本机（macOS）上把tgz文件&lt;code&gt;tar zxvf&lt;/code&gt;出来，也没有发现这些文件的存在。&lt;/p&gt;
+
+&lt;p&gt;一头雾水。于是google「tar dot file」，找到了答案：&lt;/p&gt;
+
+&lt;p&gt;macOS自带的tar在打包过程中创建了这些隐藏文件，用于保存被打包文件的扩展属性，解包时会用隐藏文件中的数据重建扩展属性。ubuntu下的tar则不具备这个特性，会将隐藏文件原样解包出来。&lt;/p&gt;
+
+&lt;p&gt;可以通过&lt;code&gt;ls -le@ *&lt;/code&gt;来查看扩展属性：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ /bin/ls -le@ ./init/letsencrypt/keys/
+total 56
+-rw-------@ 1 Boxcounter  staff  1708 Nov 16 12:26 0000_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0000_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0001_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0001_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0002_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0002_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0003_key-letsencrypt.pem
+	com.apple.quarantine	  17
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;解决方法有两种：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;设置环境变量COPYFILE_DISABLE禁用tar的这个行为：&lt;code&gt;export COPYFILE_DISABLE=1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;改用gnu tar：&lt;code&gt;brew install gnu-tar --with-default-names&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;参考资料：&lt;a href=&#34;http://superuser.com/a/61188&#34;&gt;Why do I get files like ._foo in my tarball on OS X?&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>RefBase::weakref_type::attemptIncStrong的理解</title>
-      <link>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</link>
+      <link>http://boxcounter.com/technique/2015-09-05-weakref_type/</link>
       <pubDate>Sat, 05 Sep 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</guid>
+      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type/</guid>
       <description>&lt;p&gt;见中文注释内容：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)
 {
     incWeak(id);
     
@@ -89,9 +220,9 @@
     &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; true;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; RefBase::decStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id) &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; RefBase::decStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id) &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt;
 {
     weakref_impl* &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; refs = mRefs;
     refs-&amp;gt;removeStrongRef(id);
@@ -139,7 +270,7 @@
 
 &lt;p&gt;其中两个灰色方块是使用代码动态创建的TextView。它们的父LinearLayout是这样的：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;lt;LinearLayout
     android:id=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;@+id/ll_files&amp;quot;&lt;/span&gt;
     android:layout_width=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;wrap_content&amp;quot;&lt;/span&gt;
     android:layout_height=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;100dp&amp;quot;&lt;/span&gt;
@@ -147,7 +278,7 @@
     android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt;
     /&amp;gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;不知道是什么原因，导致第一个TextView「下挫」了一些。仔细检查了它的margin和padding都是0、符合预期，但top是29。&lt;/p&gt;
 
@@ -155,7 +286,7 @@
 
 &lt;p&gt;顺着LinearLayout.onLayout()追踪到了LinearLayout.layoutHorizontal()，发现了这样一段代码：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; layoutHorizontal(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; left, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; top, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; right, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; bottom) {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; layoutHorizontal(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; left, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; top, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; right, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; bottom) {
     &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
     
     &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; childBaseline = -1;
@@ -180,7 +311,7 @@
     &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;当执行完A行时，childTop等于29。问题出在这里，再反向阅读代码，跟踪到了两个关键变量：&lt;/p&gt;
 
@@ -223,11 +354,11 @@
       <guid>http://boxcounter.com/technique/2015-08-01-Android%E4%B8%8B%E5%88%97%E8%A1%A8%E8%A7%86%E5%9B%BE%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/</guid>
       <description>
 
-&lt;h2 id=&#34;前言:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;前言&lt;/h2&gt;
+&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
 
 &lt;p&gt;Android下使用列表控件，如&lt;code&gt;RecyclerView&lt;/code&gt;和&lt;code&gt;ListView&lt;/code&gt;，很容易遇到滚动不流畅的问题。本文记录我的一次性能优化过程。&lt;/p&gt;
 
-&lt;h2 id=&#34;常见范式:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;常见范式&lt;/h2&gt;
+&lt;h1 id=&#34;常见范式&#34;&gt;常见范式&lt;/h1&gt;
 
 &lt;p&gt;我们经常这样使用列表控件：&lt;/p&gt;
 
@@ -238,15 +369,15 @@
 
 &lt;p&gt;这个范式用了一种优化技术：View重用。避免了频繁的create view和find view过程，这两个过程都是很耗时的。但仅这一种优化手段不足以解决所有的性能问题。&lt;/p&gt;
 
-&lt;h2 id=&#34;优化过程:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;优化过程&lt;/h2&gt;
+&lt;h1 id=&#34;优化过程&#34;&gt;优化过程&lt;/h1&gt;
 
 &lt;p&gt;接下来，我将基于一个实际项目的简化版来说明如何进行优化。&lt;/p&gt;
 
-&lt;h3 id=&#34;一-减少overdraw:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;一、减少Overdraw&lt;/h3&gt;
+&lt;h2 id=&#34;一-减少overdraw&#34;&gt;一、减少Overdraw&lt;/h2&gt;
 
 &lt;p&gt;Overdraw是常见性能损耗点，且多是无谓的性能损耗。相关资料非常丰富，这里不赘述。只提醒一点：善用&lt;code&gt;Window.setBackgroundDrawable*()&lt;/code&gt;。&lt;/p&gt;
 
-&lt;h3 id=&#34;二-内存优化:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;二、内存优化&lt;/h3&gt;
+&lt;h2 id=&#34;二-内存优化&#34;&gt;二、内存优化&lt;/h2&gt;
 
 &lt;p&gt;优化内存使用也是一种常用的性能优化手段。它的机理是：GC会暂停所有线程，而频繁触发GC会加剧掉帧问题。&lt;/p&gt;
 
@@ -256,7 +387,7 @@
 
 &lt;p&gt;优化方法是：尽量缓存、重用ImageView。比如：在&lt;code&gt;onBindViewHolder()&lt;/code&gt;中发现图片矩阵控件中已经包含了7个ImageView（上次该控件显示的主题有7张图片），当前要显示的主题有5张图片，那么直接重用前5个ImageView，隐藏剩下的2个ImageView。&lt;/p&gt;
 
-&lt;h3 id=&#34;三-精简布局:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;三、精简布局&lt;/h3&gt;
+&lt;h2 id=&#34;三-精简布局&#34;&gt;三、精简布局&lt;/h2&gt;
 
 &lt;p&gt;来看一下主题的赞和评论区域。其中赞区域会有两种展现形式（针对不同的应用场景）。想想如果是你来实现，会怎么布局。&lt;/p&gt;
 
@@ -265,7 +396,7 @@
 
 &lt;p&gt;布局方式可能会是这样：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
 
     &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 赞区域 --&amp;gt;&lt;/span&gt;
     &amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt; &amp;gt;
@@ -284,13 +415,13 @@
 
 &amp;lt;/LinearLayout&amp;gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;根据赞的显示方式来设置&lt;code&gt;GridLayout&lt;/code&gt;和&lt;code&gt;TextView&lt;/code&gt;的Visibility。&lt;/p&gt;
 
 &lt;p&gt;我的方法是：根据需要动态改变布局结构、保正显示效果的同时精简数量和层级。优化后是这样：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
 
     &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 赞区域 --&amp;gt;&lt;/span&gt;
     &amp;lt;ViewStub android:background=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;heart.9.png&amp;quot;&lt;/span&gt; /&amp;gt;
@@ -304,13 +435,13 @@
 
 &amp;lt;/LinearLayout&amp;gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;首先，原赞区域的&lt;code&gt;GridLayout&lt;/code&gt;和&lt;code&gt;TextView&lt;/code&gt;都放到单独的布局文件中，原布局中换上&lt;code&gt;ViewStub&lt;/code&gt;，根据需要动态inflate。其次，赞和评论图标改成.9图作为&lt;code&gt;Background&lt;/code&gt;、并辅以&lt;code&gt;paddingStart&lt;/code&gt;（具体数值由评论图标的宽度计算得到）。&lt;/p&gt;
 
 &lt;p&gt;后者的缺点是.9图可能因为拉伸变得不够清晰，但实测下来效果满足需要。&lt;/p&gt;
 
-&lt;h3 id=&#34;四-改进布局:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;四、改进布局&lt;/h3&gt;
+&lt;h2 id=&#34;四-改进布局&#34;&gt;四、改进布局&lt;/h2&gt;
 
 &lt;p&gt;常用的方法有：&lt;/p&gt;
 
@@ -324,11 +455,11 @@
 &lt;/ul&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h3 id=&#34;五-预处理:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;五、预处理&lt;/h3&gt;
+&lt;h2 id=&#34;五-预处理&#34;&gt;五、预处理&lt;/h2&gt;
 
 &lt;p&gt;需要引入一点业务数据结构来辅助说明。&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #008000&#34;&gt;// 约定：为了行文简洁，本文中所有代码都隐藏了诸如public关键字、构造函数等非核心内容。&lt;/span&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #008000&#34;&gt;// 约定：为了行文简洁，本文中所有代码都隐藏了诸如public关键字、构造函数等非核心内容。&lt;/span&gt;
 
 &lt;span style=&#34;color: #008000&#34;&gt;// 主题&lt;/span&gt;
 &lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;Topic&lt;/span&gt; {
@@ -352,34 +483,34 @@
     String mAvatarUrl;  &lt;span style=&#34;color: #008000&#34;&gt;// 头像的下载地址。&lt;/span&gt;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;这其中有部分数据是可以预处理的，得到的数据结构如下：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
     CharSequence mText;             &lt;span style=&#34;color: #008000&#34;&gt;// 包含Spannable（比如超链接）的正文。&lt;/span&gt;
     String mLikes;                  &lt;span style=&#34;color: #008000&#34;&gt;// 用逗号分隔的文字形式的点赞用户的名称。&lt;/span&gt;
     List&amp;lt;CharSequence&amp;gt; mComments;   &lt;span style=&#34;color: #008000&#34;&gt;// 包含Spannable的评论列表。&lt;/span&gt;
     String mCreateTime;             &lt;span style=&#34;color: #008000&#34;&gt;// 发表时间。&lt;/span&gt;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;然后在&lt;code&gt;onBindViewHolder()&lt;/code&gt;中就可以直接将&lt;code&gt;PreprocessResult&lt;/code&gt;的内容设置到相应的view上，避免在UI线程中动态处理造成掉帧。&lt;/p&gt;
 
 &lt;p&gt;这种方法的缺点是增加了复杂度：PreprocessResult需要和Topic保持同步更新。比如用户点赞、发表评论之后，需要同步修改PreprocessResult和Topic。&lt;/p&gt;
 
-&lt;h3 id=&#34;六-预创建:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;六、预创建&lt;/h3&gt;
+&lt;h2 id=&#34;六-预创建&#34;&gt;六、预创建&lt;/h2&gt;
 
 &lt;p&gt;分析发现，滚动过程会因为动态创建TopicView而卡顿。TopicView是用来显示整个主题的自定义View，包含前述的赞和评论等子布局。即便经过精简，整个布局依然比较复杂，inflate过程很耗时。于是预先创建了一些TopicView备用，在&lt;code&gt;onCreateViewHolder()&lt;/code&gt;中尽量使用它们，如果备用已经用完再动态创建。&lt;/p&gt;
 
-&lt;h3 id=&#34;七-优化textview:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;七、优化TextView&lt;/h3&gt;
+&lt;h2 id=&#34;七-优化textview&#34;&gt;七、优化TextView&lt;/h2&gt;
 
 &lt;p&gt;经过上述这几步优化之后，流畅度提升了很多，但偶尔还是会出现较明显的卡顿现象。分析发现是&lt;code&gt;TextView.setText()&lt;/code&gt;耗时过长导致的，在高强度测试下（长文主题，并且有很多评论），平均一次长文的调用就可能耗时22ms，已经超过了保证帧率的16ms上限。&lt;/p&gt;
 
 &lt;p&gt;因为这个项目的业务逻辑决定了主题、评论的文字内容不会被修改，只有增删。于是采用的优化方法是：对于主题正文和评论，用&lt;code&gt;StaticLayout&lt;/code&gt;配合自定义View展示文字。自定义View代码如下：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;StaticLayoutView&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;extends&lt;/span&gt; View {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;StaticLayoutView&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;extends&lt;/span&gt; View {
     &lt;span style=&#34;color: #0000ff&#34;&gt;private&lt;/span&gt; StaticLayout mLayout;
 
     &lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; setLayout(StaticLayout layout) {
@@ -416,22 +547,22 @@
     }
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;StaticLayoutView相比TextView简单、高效很多，更重要的是&lt;code&gt;StaticLayout&lt;/code&gt;可以在非UI线程创建、初始化。于是前述「预处理」过程中的数据结构变为：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
     StaticLayout mText;             &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;= 之前是CharSequence&lt;/span&gt;
     String mLikes;
     List&amp;lt;StaticLayout&amp;gt; mComments;   &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;= 之前是List&amp;lt;CharSequence&amp;gt;&lt;/span&gt;
     String mCreateTime;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;优化后，在高强度测试环境下，平均帧率从34上升至47。实际环境中的平均帧率约为51。&lt;/p&gt;
 
-&lt;h2 id=&#34;总结:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;总结&lt;/h2&gt;
+&lt;h1 id=&#34;总结&#34;&gt;总结&lt;/h1&gt;
 
 &lt;p&gt;整个优化过程的核心思想是：&lt;/p&gt;
 
@@ -448,7 +579,7 @@
 &lt;li&gt;增加了复杂度；&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h2 id=&#34;后记:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;后记&lt;/h2&gt;
+&lt;h1 id=&#34;后记&#34;&gt;后记&lt;/h1&gt;
 
 &lt;p&gt;除前述优化方法之外，还有一些零星的、未能实际应用的优化方法。比如：&lt;/p&gt;
 
@@ -466,7 +597,7 @@
 &lt;li&gt;善用工具。比如Traceview、Memory Monitor、Hierarchy Viewer。本文所述的优化过程重度依赖这些工具。&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h2 id=&#34;参考资料:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;参考资料&lt;/h2&gt;
+&lt;h1 id=&#34;参考资料&#34;&gt;参考资料&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://android-developers.blogspot.com/2010/10/traceview-war-story.html&#34;&gt;Traceview War Story&lt;/a&gt;&lt;/li&gt;
@@ -563,14 +694,14 @@
       <guid>http://boxcounter.com/technique/2014-01-12-assert-defensive-offensive-programming/</guid>
       <description>
 
-&lt;h1 id=&#34;一-前言:03abadb4947350f837a3f50c1387e0d7&#34;&gt;一、前言&lt;/h1&gt;
+&lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;
 
 &lt;p&gt;　　本文的内容最初源自我重温《代码大全》时候读到的一段内容，然后和同事讨论又引发了自己的一些思索。最后觉得这值得写下来，一来我一直很喜欢琢磨编码风格，有一些这方面的​思考，但都是一些存放在脑子里的思维碎片，（部分）整理成文对我自己是件好事。二来抛砖引玉，希望能找到一些同好探讨。&lt;/p&gt;
 
-&lt;h1 id=&#34;二-常用的断言宏:03abadb4947350f837a3f50c1387e0d7&#34;&gt;二、常用的断言宏&lt;/h1&gt;
+&lt;h1 id=&#34;二-常用的断言宏&#34;&gt;二、常用的断言宏&lt;/h1&gt;
 
 &lt;p&gt;　　先贴一段我常用的断言宏，后面讲述的时候所说的ASSERT是通指下面这一组ASSERT*。
-&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;#ifdef DEBUG&lt;/span&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;#ifdef DEBUG&lt;/span&gt;
 &lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT(x) assert(x)&lt;/span&gt;
 &lt;span style=&#34;color: #0000ff&#34;&gt;#else&lt;/span&gt;
 &lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT(x)&lt;/span&gt;
@@ -584,7 +715,7 @@
 &lt;/pre&gt;&lt;/div&gt;
 &lt;/p&gt;
 
-&lt;h1 id=&#34;三-隔栏与断言:03abadb4947350f837a3f50c1387e0d7&#34;&gt;三、隔栏与断言&lt;/h1&gt;
+&lt;h1 id=&#34;三-隔栏与断言&#34;&gt;三、隔栏与断言&lt;/h1&gt;
 
 &lt;p&gt;　　《代码大全》里有这么一段“隔栏与断言的关系”：&lt;/p&gt;
 
@@ -612,7 +743,7 @@
 &lt;p&gt;　　又琢磨了琢磨，感觉《代码大全》里说的也有道理。隔栏处确实更适合做过滤，而不是断言。&lt;br /&gt;
 　　因为隔栏外部的程序未必需要隔栏内部的反馈。比如单元测试时，测试程序可能会有意的传入非法的参数。&lt;/p&gt;
 
-&lt;h1 id=&#34;四-一个讨论引发的思索:03abadb4947350f837a3f50c1387e0d7&#34;&gt;四、一个讨论引发的思索&lt;/h1&gt;
+&lt;h1 id=&#34;四-一个讨论引发的思索&#34;&gt;四、一个讨论引发的思索&lt;/h1&gt;
 
 &lt;p&gt;　　另外，同事分享了一个讨论贴，主贴里楼主愤怒地吐槽：&lt;/p&gt;
 
@@ -658,7 +789,7 @@
 
 &lt;p&gt;　　另外在发布版本中是包容还是优雅的退出，取决于具体的问题。比如office中发现用户通过剪贴板复制过来的数据不合要求，如果此时“优雅的退出”，用户可能杀人的心都有​了。&lt;/p&gt;
 
-&lt;h1 id=&#34;五-性能优化相关的一些想法:03abadb4947350f837a3f50c1387e0d7&#34;&gt;五、性能优化相关的一些想法&lt;/h1&gt;
+&lt;h1 id=&#34;五-性能优化相关的一些想法&#34;&gt;五、性能优化相关的一些想法&lt;/h1&gt;
 
 &lt;p&gt;　　这个话题也是一个很庞大的话题，我只说说我个人的想法：&lt;/p&gt;
 
@@ -672,7 +803,7 @@
 
 &lt;p&gt;　　最后，广而告之：《代码大全》，你值得拥有。&lt;/p&gt;
 
-&lt;h1 id=&#34;六-版本记录:03abadb4947350f837a3f50c1387e0d7&#34;&gt;六、版本记录&lt;/h1&gt;
+&lt;h1 id=&#34;六-版本记录&#34;&gt;六、版本记录&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;v1.0 - 2014-01-05, 初始发布。&lt;/li&gt;
@@ -683,13 +814,13 @@
     
     <item>
       <title>linux、osx下搭建操作系统开发环境 v1.1</title>
-      <link>http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1.1/</link>
+      <link>http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1/</link>
       <pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1.1/</guid>
+      <guid>http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1/</guid>
       <description>
 
-&lt;h1 id=&#34;一-前言:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;一、前言&lt;/h1&gt;
+&lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;
 
 &lt;p&gt;　　本文档记录的内容既适用于x86也适用于x64，只是对于后者有一些环境要求。&lt;br /&gt;
 　　之前开发使用的方法是：自己的引导代码+虚拟软盘。优点是搭建简单，所有代码都是自己编写，可控性强。最近想试试使用grub的引导功能，于是花了些时间琢磨。搜出来的相​关资料有不少，但是要么是grub1的，要么太过零散，要么描述太过简略。总之，没有一篇文章详细的讲述整个配置过程。所以我就在搭建的过程中顺手整理了这么一篇完整的、​完全从零开始的方法，其中每一步都有较丰富的说明。&lt;br /&gt;
@@ -707,7 +838,7 @@
 &lt;p&gt;　　如果同好使用的环境不一样，可能需要根据情况自行调整一些细节。&lt;br /&gt;
 　　另外，本文提供的命令在显示时候可能会自动折行，所以复制到剪贴板中之后（在折行处）可能会有多余的空格，请同好自行删减。&lt;/p&gt;
 
-&lt;h1 id=&#34;二-创建虚拟磁盘-并分区:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;二、创建虚拟磁盘，并分区&lt;/h1&gt;
+&lt;h1 id=&#34;二-创建虚拟磁盘-并分区&#34;&gt;二、创建虚拟磁盘，并分区&lt;/h1&gt;
 
 &lt;p&gt;　　首先说明：&lt;br /&gt;
 　　这里的目标磁盘的属性是：16 headers, 63 sectors per track, 512 bytes per sector。意味着每一个cylinder的大小是516096bytes（16 * 63 * 512）。&lt;br /&gt;
@@ -735,18 +866,14 @@ Building a new DOS disklabel with disk identifier 0x136d49ee.
 Changes will remain in memory only, until you decide to write them.
 After that, of course, the previous content won&#39;t be recoverable.
 
-
 Warning: invalid flag 0x0000 of partition table 4 will be corrected by w(rite)
-
 
 Command (m for help): o &amp;lt;&amp;lt;&amp;lt;=== Create a new empty DOS partition table
 Building a new DOS disklabel with disk identifier 0x5bd665d5.
 Changes will remain in memory only, until you decide to write them.
 After that, of course, the previous content won&#39;t be recoverable.
 
-
 Warning: invalid flag 0x0000 of partition table 4 will be corrected by w(rite)
-
 
 Command (m for help): n &amp;lt;&amp;lt;&amp;lt;=== Create a new partition
 Partition type:
@@ -759,13 +886,10 @@ Using default value 2048
 Last sector, +sectors or +size{K,M,G} (2048-20159, default 20159): &amp;lt;&amp;lt;&amp;lt;=== 回车
 Using default value 20159
 
-
 Command (m for help): a &amp;lt;&amp;lt;&amp;lt;=== Toggle the bootable flag (Optional)
 Partition number (1-4): 1 &amp;lt;&amp;lt;&amp;lt;=== 分区1
 
-
 Command (m for help): p &amp;lt;&amp;lt;&amp;lt;=== Print the partition table.
-
 
 Disk /dev/loop0: 10 MB, 10321920 bytes
 16 heads, 63 sectors/track, 20 cylinders, total 20160 sectors
@@ -774,18 +898,14 @@ Sector size (logical/physical): 512 bytes / 512 bytes
 I/O size (minimum/optimal): 512 bytes / 512 bytes
 Disk identifier: 0x5bd665d5
 
-
 Device Boot      Start         End      Blocks   Id  System
 /dev/loop0p1   *        2048       20159        9056   83  Linux
 &amp;lt;&amp;lt;&amp;lt;=== 如果使用附录2记录的方法，需要记录Start和Blocks的值，本例子中分别是2048和9056。
 
-
 Command (m for help): w &amp;lt;&amp;lt;&amp;lt;=== Write partition table to our &#39;disk&#39; and exit
 The partition table has been altered!
 
-
 Calling ioctl() to re-read partition table.
-
 
 WARNING: Re-reading the partition table failed with error 22: Invalid argument.
 The kernel still uses the old table. The new table will be used at
@@ -814,7 +934,7 @@ Syncing disks.
 如果前面的步骤都成功，会看到名为“lost+found”的目录，说明磁盘和分区都正确的创建了。&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h1 id=&#34;三-安装grub2到虚拟磁盘:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;三、安装grub2到虚拟磁盘&lt;/h1&gt;
+&lt;h1 id=&#34;三-安装grub2到虚拟磁盘&#34;&gt;三、安装grub2到虚拟磁盘&lt;/h1&gt;
 
 &lt;p&gt;　　假设磁盘挂载到设备“/dev/loop0”上，分区挂载到“/tmp/antos”目录下。&lt;/p&gt;
 
@@ -825,7 +945,7 @@ Syncing disks.
 　　如果使用的系统是x64架构的，需要使用新一些的系统，比如ubuntu 13.10。具体原因请参考附录一。&lt;br /&gt;
 　　（在fedora等redhat系中使用的名称是“grub2-install”）&lt;/p&gt;
 
-&lt;h1 id=&#34;四-在bochs中使用虚拟磁盘:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;四、在bochs中使用虚拟磁盘&lt;/h1&gt;
+&lt;h1 id=&#34;四-在bochs中使用虚拟磁盘&#34;&gt;四、在bochs中使用虚拟磁盘&lt;/h1&gt;
 
 &lt;ol&gt;
 &lt;li&gt;&lt;p&gt;确认虚拟磁盘的属性。&lt;br /&gt;
@@ -854,7 +974,6 @@ Syncing disks.
 5. Restore the Bochs state from...
 6. Begin simulation
 7. Quit now
-
 
 Please choose one: [2]
 &lt;/code&gt;&lt;/pre&gt;
@@ -908,9 +1027,9 @@ Please choose one: [2]
 
 &lt;p&gt;　　&lt;img src=&#34;http://boxcounter.com/images/2013-11-14/grub-cmdline.png&#34;/&gt;&lt;/p&gt;
 
-&lt;h1 id=&#34;五-编写最简单的系统内核:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;五、编写最简单的系统内核&lt;/h1&gt;
+&lt;h1 id=&#34;五-编写最简单的系统内核&#34;&gt;五、编写最简单的系统内核&lt;/h1&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;//&lt;/span&gt; kernel.asm&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;源码&lt;/span&gt;
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;//&lt;/span&gt; kernel.asm&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;源码&lt;/span&gt;
 &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;section&lt;/span&gt; .kernel]
 &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;[&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;bits&lt;/span&gt; 32]
 
@@ -976,7 +1095,7 @@ jmp &lt;span style=&#34;color: #0000ff&#34;&gt;$&lt;/span&gt;
 &lt;p&gt;　　编译过程中可能会报警告，无视它。&lt;br /&gt;
 　　将虚拟磁盘挂载到某个目录，然后将kernel.bin拷贝到分区的根目录，即和/boot目录同一层目录。&lt;/p&gt;
 
-&lt;h1 id=&#34;六-使用grub2启动自行编写的操作系统内核:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;六、使用grub2启动自行编写的操作系统内核&lt;/h1&gt;
+&lt;h1 id=&#34;六-使用grub2启动自行编写的操作系统内核&#34;&gt;六、使用grub2启动自行编写的操作系统内核&lt;/h1&gt;
 
 &lt;p&gt;　　假设分区挂载到“/tmp/antos”目录下，那么创建grub需要的配置文件“/tmp/antos/boot/grub/grub.cfg”，将以下几行文本贴进去：&lt;/p&gt;
 
@@ -1007,7 +1126,7 @@ Next at t=449811185
 
 &lt;p&gt;　　ok，整个配置过程就完毕了，整个过程都是在linux中完成的。使用fat32的osx同好可以使用类似的方法来完成。整个过程每一步的功能都写的很清楚了，看到这里理​理思路应该就明白整个流程了。&lt;/p&gt;
 
-&lt;h1 id=&#34;七-osx中读写ext2文件系统的虚拟磁盘:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;七、osx中读写ext2文件系统的虚拟磁盘&lt;/h1&gt;
+&lt;h1 id=&#34;七-osx中读写ext2文件系统的虚拟磁盘&#34;&gt;七、osx中读写ext2文件系统的虚拟磁盘&lt;/h1&gt;
 
 &lt;p&gt;　　最后说说osx相关的内容，因为我不想每次做开发的时候都需要开个linux虚拟机。以下是在osx下读写虚拟磁盘的方法，比如更新的kernel.bin等等。linu​xer可以无视这一步。&lt;/p&gt;
 
@@ -1079,7 +1198,7 @@ fuse-ext2默认只能以只读方式挂载设备，所以需要进行以下修�
 &lt;p&gt;（注意是磁盘设备，不是分区设备disk1s1）。&lt;/p&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h1 id=&#34;八-附录一-x64-ubuntu-12-04-2中执行grub-install遇到的问题:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;八、附录一：x64 ubuntu 12.04.2中执行grub-install遇到的问题&lt;/h1&gt;
+&lt;h1 id=&#34;八-附录一-x64-ubuntu-12-04-2中执行grub-install遇到的问题&#34;&gt;八、附录一：x64 ubuntu 12.04.2中执行grub-install遇到的问题&lt;/h1&gt;
 
 &lt;p&gt;　　我在x64 ubuntu 12.04.2中执行“安装grub2到虚拟磁盘”操作时总是失败，如下：&lt;/p&gt;
 
@@ -1101,7 +1220,7 @@ Path `/tmp/antos/boot/grub&#39; is not readable by GRUB on boot. Installation is
 
 &lt;p&gt;　　我查阅了很多资料，都没有明确的解决方案。经过了约莫20个小时的摸索，最终发现只需要使用新版本的系统自带的grub 2.0.0即可。（注：x64 ubuntu 12.04.2中的grub2是我源码编译的2.0.0版，也尝试过使用trunk源码编译或者使用系统自带的1.99，都会报错。）&lt;/p&gt;
 
-&lt;h1 id=&#34;九-附录二-创建虚拟磁盘分区的另外一种方法-losetup:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;九、附录二：创建虚拟磁盘分区的另外一种方法（losetup）&lt;/h1&gt;
+&lt;h1 id=&#34;九-附录二-创建虚拟磁盘分区的另外一种方法-losetup&#34;&gt;九、附录二：创建虚拟磁盘分区的另外一种方法（losetup）&lt;/h1&gt;
 
 &lt;p&gt;　　需要说明，这种方法较前面介绍的使用kpartx的方法要繁琐，所以并不推荐（特别是如果要使用多分区）。补充在这里的原因是我最开始搜索到的资料使用的就是losetu​p工具，摸索成功之后才发现kpartx。&lt;br /&gt;
 　　另外，操作过程中有部分步骤和前面讲述的步骤一样，所以省略了那些步骤的说明。&lt;/p&gt;
@@ -1127,7 +1246,7 @@ Path `/tmp/antos/boot/grub&#39; is not readable by GRUB on boot. Installation is
 卸载目录和设备。&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h1 id=&#34;十-主要参考资料:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;十、主要参考资料&lt;/h1&gt;
+&lt;h1 id=&#34;十-主要参考资料&#34;&gt;十、主要参考资料&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;The Multiboot Specification&lt;/li&gt;
@@ -1135,7 +1254,7 @@ Path `/tmp/antos/boot/grub&#39; is not readable by GRUB on boot. Installation is
 &lt;li&gt;Mac OS X下读写ext2/ext3文件系统&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h1 id=&#34;十一-版本记录:31a30a92cbf0de02e916cc20c8b8ad92&#34;&gt;十一、版本记录&lt;/h1&gt;
+&lt;h1 id=&#34;十一-版本记录&#34;&gt;十一、版本记录&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;v1.0 - 2013-09-02，初始发布。&lt;/li&gt;
@@ -1148,25 +1267,25 @@ Path `/tmp/antos/boot/grub&#39; is not readable by GRUB on boot. Installation is
     
     <item>
       <title>osx下搭建操作系统开发环境之64位交叉开发工具集（gcc&#43;gdb）v1.0</title>
-      <link>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.0/</link>
+      <link>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1/</link>
       <pubDate>Fri, 08 Nov 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.0/</guid>
+      <guid>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1/</guid>
       <description>
 
-&lt;h1 id=&#34;一-前言:a48ba76a4646a20561a3efada380ccda&#34;&gt;一、前言&lt;/h1&gt;
+&lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;
 
 &lt;p&gt;　　《&lt;a href=&#34;http://boxcounter.com/2013/11/04/osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc+gdb%EF%BC%89v1.1&#34;&gt;osx下搭建操作系统开发环境之32位交叉开发工具集(gcc+gdb)&lt;/a&gt;》一文中讲解了32位交叉工具的构建。64位（专指x64，非IA64）的构建方法和32位基本相同。看过前文的朋友看本文会发现绝大多数内容都是一样的。没错，之所以不基于前文、只讲差异，是为了独立性，方便只关注x64构建方法的朋友。&lt;br /&gt;
 　　我的环境：osx 10.9&lt;/p&gt;
 
-&lt;h1 id=&#34;二-安装osx版的gcc:a48ba76a4646a20561a3efada380ccda&#34;&gt;二、安装osx版的gcc&lt;/h1&gt;
+&lt;h1 id=&#34;二-安装osx版的gcc&#34;&gt;二、安装osx版的gcc&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;brew install gcc48
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;　　推荐下载最新的稳定版gcc。&lt;/p&gt;
 
-&lt;h1 id=&#34;三-配置编译环境:a48ba76a4646a20561a3efada380ccda&#34;&gt;三、配置编译环境&lt;/h1&gt;
+&lt;h1 id=&#34;三-配置编译环境&#34;&gt;三、配置编译环境&lt;/h1&gt;
 
 &lt;ol&gt;
 &lt;li&gt;下载gcc源码&lt;br /&gt;
@@ -1213,7 +1332,7 @@ Path `/tmp/antos/boot/grub&#39; is not readable by GRUB on boot. Installation is
     make install
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;四-编译交叉版的gcc:a48ba76a4646a20561a3efada380ccda&#34;&gt;四、编译交叉版的gcc&lt;/h1&gt;
+&lt;h1 id=&#34;四-编译交叉版的gcc&#34;&gt;四、编译交叉版的gcc&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;cd $gcc-4.8.2
 mkdir build-gcc
@@ -1231,7 +1350,7 @@ make install-target-libgcc
 &lt;pre&gt;&lt;code&gt;export PATH=&amp;quot;$HOME/opt/cross/bin:$PATH&amp;quot;
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;五-编译交叉版的gdb:a48ba76a4646a20561a3efada380ccda&#34;&gt;五、编译交叉版的gdb&lt;/h1&gt;
+&lt;h1 id=&#34;五-编译交叉版的gdb&#34;&gt;五、编译交叉版的gdb&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;cd $gdb-7.6.1
 mkdir build-$TARGET
@@ -1276,7 +1395,7 @@ Remote debugging using localhost:1234
 &lt;p&gt;总结，gdb的TARGET要和bochs（而非被调试OS）的平台一致，即如果使用的是x64的bochs，那么gdb的编译TARGET也需要是x64的。&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h1 id=&#34;六-参考资料:a48ba76a4646a20561a3efada380ccda&#34;&gt;六、参考资料&lt;/h1&gt;
+&lt;h1 id=&#34;六-参考资料&#34;&gt;六、参考资料&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://wiki.osdev.org/GCC_Cross-Compiler&#34;&gt;GCC Cross-Compiler&lt;/a&gt;&lt;/li&gt;
@@ -1285,7 +1404,7 @@ Remote debugging using localhost:1234
 &lt;li&gt;&lt;a href=&#34;http://sourceforge.net/p/bochs/discussion/39592/thread/a489c7f1&#34;&gt;bochs + GDB help&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h1 id=&#34;七-版本记录:a48ba76a4646a20561a3efada380ccda&#34;&gt;七、版本记录&lt;/h1&gt;
+&lt;h1 id=&#34;七-版本记录&#34;&gt;七、版本记录&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;v1.0 - 2013-11-08，初始发布。&lt;/li&gt;
@@ -1297,22 +1416,22 @@ Remote debugging using localhost:1234
     
     <item>
       <title>osx下搭建操作系统开发环境之构建bochs v1.0</title>
-      <link>http://boxcounter.com/technique/2013-11-05-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B%E6%9E%84%E5%BB%BAbochs_v1.0/</link>
+      <link>http://boxcounter.com/technique/2013-11-05-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B%E6%9E%84%E5%BB%BAbochs_v1/</link>
       <pubDate>Tue, 05 Nov 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2013-11-05-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B%E6%9E%84%E5%BB%BAbochs_v1.0/</guid>
+      <guid>http://boxcounter.com/technique/2013-11-05-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B%E6%9E%84%E5%BB%BAbochs_v1/</guid>
       <description>
 
-&lt;h1 id=&#34;一-前言:29112401aeca7f6da9b81a38b0dff7ac&#34;&gt;一、前言&lt;/h1&gt;
+&lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;
 
 &lt;p&gt;　　我编译bochs的目的是为了启用gdb调试功能。bochs提供的调试器功能较简单，开发过程中还是gdb更趁手。本文记录的方法是我一点点尝试出来的，参考了网上一些零碎资料。整个过程虽然简单但是整体比较凌乱，特别是需要对bochs的官方源码包做好几处修改。目前不太想再花时间优化过程，能编译出来就好。如果有同好有更简单的方法，有劳和我分享一下吧。&lt;br /&gt;
 　　我的环境：osx 10.9，bochs 2.6.2、使用x11作为界面库。&lt;/p&gt;
 
-&lt;h1 id=&#34;二-安装x11:29112401aeca7f6da9b81a38b0dff7ac&#34;&gt;二、安装X11&lt;/h1&gt;
+&lt;h1 id=&#34;二-安装x11&#34;&gt;二、安装X11&lt;/h1&gt;
 
 &lt;p&gt;　　下载&lt;a href=&#34;http://xquartz.macosforge.org/trac&#34;&gt;XQuartz&lt;/a&gt;安装包，并安装。&lt;/p&gt;
 
-&lt;h1 id=&#34;三-配置编译环境:29112401aeca7f6da9b81a38b0dff7ac&#34;&gt;三、配置编译环境&lt;/h1&gt;
+&lt;h1 id=&#34;三-配置编译环境&#34;&gt;三、配置编译环境&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;export CC=/usr/bin/gcc
 export CXX=/usr/bin/g++
@@ -1324,7 +1443,7 @@ export PREFIX=/Users/boxcounter/opt/bochs-gdb
 
 &lt;p&gt;　　根据我的试验，使用brew安装的gcc编译会报错，使用系统自带的就可以正常编译，所以调整了CC等环境变量。PREFIX宏请根据需要自行修改。&lt;/p&gt;
 
-&lt;h1 id=&#34;四-编译bochs:29112401aeca7f6da9b81a38b0dff7ac&#34;&gt;四、编译bochs&lt;/h1&gt;
+&lt;h1 id=&#34;四-编译bochs&#34;&gt;四、编译bochs&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;下载&lt;a href=&#34;http://sourceforge.net/projects/bochs/files/bochs/&#34;&gt;源码包&lt;/a&gt;并解压，解压出来的目录名称之为“$bochs”。&lt;/li&gt;
@@ -1378,13 +1497,13 @@ export PREFIX=/Users/boxcounter/opt/bochs-gdb
 &lt;li&gt;&lt;p&gt;make &amp;amp;&amp;amp; make install&lt;/p&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h1 id=&#34;五-参考资料:29112401aeca7f6da9b81a38b0dff7ac&#34;&gt;五、参考资料&lt;/h1&gt;
+&lt;h1 id=&#34;五-参考资料&#34;&gt;五、参考资料&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://sourceforge.net/p/bochs/discussion/39592/thread/9c22887c&#34;&gt;No rule to make target `-lltdl&amp;rsquo;&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h1 id=&#34;六-版本记录:29112401aeca7f6da9b81a38b0dff7ac&#34;&gt;六、版本记录&lt;/h1&gt;
+&lt;h1 id=&#34;六-版本记录&#34;&gt;六、版本记录&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;v1.0 - 2013-11-05，初始发布。&lt;/li&gt;
@@ -1396,25 +1515,25 @@ export PREFIX=/Users/boxcounter/opt/bochs-gdb
     
     <item>
       <title>osx下搭建操作系统开发环境之32位交叉开发工具集（gcc&#43;gdb）v1.1</title>
-      <link>http://boxcounter.com/technique/2013-09-07-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.1/</link>
+      <link>http://boxcounter.com/technique/2013-09-07-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1/</link>
       <pubDate>Mon, 04 Nov 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2013-09-07-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.1/</guid>
+      <guid>http://boxcounter.com/technique/2013-09-07-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1/</guid>
       <description>
 
-&lt;h1 id=&#34;一-前言:1fb642315dd7f0464840b224b39a5096&#34;&gt;一、前言&lt;/h1&gt;
+&lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;
 
 &lt;p&gt;　　《&lt;a href=&#34;http://boxcounter.com/2013/11/14/linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1.1&#34;&gt;linux、osx下搭建操作系统开发环境的完整步骤&lt;/a&gt;》一文中讲解了一些基本的搭建方法，并提供了一个nasm汇编编写的简单的系统内核源码。实际开发过程中更多使用的是C语言，就需要有一个配套的C编译器。因为我使用的可执行文件是elf格式，所以我选择的是GCC。但是osx下安装的GCC生成的是osx的可执行文件格式，并不是elf。所以我需要一个能在osx下生成elf的GCC，俗称的交叉编译器。&lt;br /&gt;
 　　我的环境：osx 10.8.4 &amp;amp; 10.9&lt;/p&gt;
 
-&lt;h1 id=&#34;二-安装osx版的gcc:1fb642315dd7f0464840b224b39a5096&#34;&gt;二、安装osx版的gcc&lt;/h1&gt;
+&lt;h1 id=&#34;二-安装osx版的gcc&#34;&gt;二、安装osx版的gcc&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;brew install gcc48
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;　　推荐下载最新的稳定版gcc。&lt;/p&gt;
 
-&lt;h1 id=&#34;三-配置编译环境:1fb642315dd7f0464840b224b39a5096&#34;&gt;三、配置编译环境&lt;/h1&gt;
+&lt;h1 id=&#34;三-配置编译环境&#34;&gt;三、配置编译环境&lt;/h1&gt;
 
 &lt;ol&gt;
 &lt;li&gt;下载gcc源码&lt;br /&gt;
@@ -1428,7 +1547,8 @@ export PREFIX=/Users/boxcounter/opt/bochs-gdb
 &lt;li&gt;&lt;a href=&#34;https://gnu.org/software/binutils/&#34;&gt;GNU Binutils&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://gmplib.org/&#34;&gt;GMP&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;http://www.mpfr.org/&#34;&gt;MPFR&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;http://multiprecision.org/&#34;&gt;MPC&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;http://multiprecision.org/&#34;&gt;MPC&lt;/a&gt;
+&lt;br /&gt;&lt;/li&gt;
 &lt;/ol&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
@@ -1462,7 +1582,7 @@ export PREFIX=/Users/boxcounter/opt/bochs-gdb
     make install
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;四-编译交叉版的gcc:1fb642315dd7f0464840b224b39a5096&#34;&gt;四、编译交叉版的gcc&lt;/h1&gt;
+&lt;h1 id=&#34;四-编译交叉版的gcc&#34;&gt;四、编译交叉版的gcc&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;cd $gcc-4.8.1
 mkdir build-gcc
@@ -1480,11 +1600,11 @@ make install-target-libgcc
 &lt;pre&gt;&lt;code&gt;export PATH=&amp;quot;$HOME/opt/cross/bin:$PATH&amp;quot;
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;五-测试源码:1fb642315dd7f0464840b224b39a5096&#34;&gt;五、测试源码&lt;/h1&gt;
+&lt;h1 id=&#34;五-测试源码&#34;&gt;五、测试源码&lt;/h1&gt;
 
 &lt;p&gt;　　现在咱有了交叉编译器了，试试效果吧：
-&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #008000&#34;&gt;// kernel.c&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#include &amp;quot;multiboot2.h&amp;quot;&lt;/span&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #008000&#34;&gt;// kernel.c&lt;/span&gt;
+&lt;span style=&#34;color: #0000ff&#34;&gt;#include&lt;/span&gt; &lt;span style=&#34;color: #008000&#34;&gt;&amp;quot;multiboot2.h&amp;quot;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;&lt;/span&gt;
 
 
 &lt;span style=&#34;color: #0000ff&#34;&gt;#define INFO_REQ_COUNT  2&lt;/span&gt;
@@ -1492,7 +1612,7 @@ make install-target-libgcc
 &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; antos_multiboot_header_tag_information_request
 {
     &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; multiboot_header_tag_information_request info_req __attribute__((aligned(MULTIBOOT_TAG_ALIGN)));
-    &lt;span style=&#34;color: #2b91af&#34;&gt;multiboot_uint32_t&lt;/span&gt; req[INFO_REQ_COUNT];
+    multiboot_uint32_t req[INFO_REQ_COUNT];
 } __attribute__((packed));
 
 
@@ -1555,7 +1675,7 @@ make install-target-libgcc
 &lt;p&gt;　　「-Ttext=0x100000」是为了让代码段加载到0x100000，而不是默认的08048074（我的环境中），后者超出我的bochs虚拟机的物理内存空间。&lt;br /&gt;
 　　然后用kernel.bin替换之前的虚拟磁盘中的同名文件，再运行bochs虚拟机就能看到熟悉的magic breakpoint了。&lt;/p&gt;
 
-&lt;h1 id=&#34;六-编译交叉版的-gdb:1fb642315dd7f0464840b224b39a5096&#34;&gt;六、编译交叉版的 gdb&lt;/h1&gt;
+&lt;h1 id=&#34;六-编译交叉版的-gdb&#34;&gt;六、编译交叉版的 gdb&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;cd $gdb-7.6.1
 mkdir build-$TARGET
@@ -1567,20 +1687,20 @@ sudo make install
 
 &lt;p&gt;　　完成后,在「~/opt/cross/bin」下就能看到编译好的交叉版的i586-elf-gdb 了。&lt;/p&gt;
 
-&lt;h1 id=&#34;七-参考资料:1fb642315dd7f0464840b224b39a5096&#34;&gt;七、参考资料&lt;/h1&gt;
+&lt;h1 id=&#34;七-参考资料&#34;&gt;七、参考资料&lt;/h1&gt;
 
 &lt;ol&gt;
 &lt;li&gt;&lt;a href=&#34;http://wiki.osdev.org/GCC_Cross-Compiler&#34;&gt;GCC Cross-Compiler&lt;/a&gt;&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h1 id=&#34;八-版本记录:1fb642315dd7f0464840b224b39a5096&#34;&gt;八、版本记录&lt;/h1&gt;
+&lt;h1 id=&#34;八-版本记录&#34;&gt;八、版本记录&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;v1.0 - 2013-09-07，初始发布。&lt;/li&gt;
 &lt;li&gt;v1.1 - 2013-11-04，增加「编译交叉版的gdb」章节。&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h1 id=&#34;九-网友补充:1fb642315dd7f0464840b224b39a5096&#34;&gt;九、网友补充&lt;/h1&gt;
+&lt;h1 id=&#34;九-网友补充&#34;&gt;九、网友补充&lt;/h1&gt;
 
 &lt;p&gt;以下内容为热心网友补充，供同好参考。（我没有验证。暂记录在这里，后续验证过后我再补入正文。感谢这位网友被我之前老博客系统的验证码刁难了N次后，还依然告知我，非常感谢。）&lt;/p&gt;
 
@@ -1595,35 +1715,6 @@ gcc的依赖项GMP/FPMR/MPC也不需要手动下载，在gcc的源码下执行./
     </item>
     
     <item>
-      <title>osx下为timeoutfree添加定时任务</title>
-      <link>http://boxcounter.com/technique/2013-08-14-osx%E4%B8%8B%E4%B8%BAtimeoutfree%E6%B7%BB%E5%8A%A0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1/</link>
-      <pubDate>Wed, 14 Aug 2013 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2013-08-14-osx%E4%B8%8B%E4%B8%BAtimeoutfree%E6%B7%BB%E5%8A%A0%E5%AE%9A%E6%97%B6%E4%BB%BB%E5%8A%A1/</guid>
-      <description>&lt;p&gt;我习惯使用休息提醒软件定时提醒我站起来扭扭腰，目前使用的是“Time Out Free”，挺好用的一款免费软件。&lt;/p&gt;
-
-&lt;p&gt;　　但是使用过程中我有一个用着不够爽的地方：&lt;br /&gt;
-　　下班回家后或者周末，我基本是躺着或者趴在床上用电脑，不需要再提醒我。但是它没有提供时间段配置，于是我用了定时任务来实现了，如下：&lt;/p&gt;
-
-&lt;p&gt;　　下载附件“timeoutfree.sh”，加上执行权限。然后在终端中输入“crontab -e”编辑个人的定时任务，在里面添加如下两行（路径根据情况调整）：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;*/20    9-10    *   *   1-5 /Users/boxcounter/timeoutfree.sh start
-*/20    18-23   *   *   1-5 /Users/boxcounter/timeoutfree.sh stop
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;　　然后保存退出，终端应该会输出“crontab: installing new crontab”，说明添加定时任务成功了。&lt;/p&gt;
-
-&lt;p&gt;　　说明：&lt;br /&gt;
-　　第一行的意思是：工作日每天早上9～11点这两个小时内，每隔20分钟尝试一次启动TimeOutFree。&lt;br /&gt;
-　　第二行的意思是：工作日每天晚上18～24点这几个小时内，每隔20分钟尝试一次关闭TimeOutFree。&lt;/p&gt;
-
-&lt;p&gt;　　附件：&lt;/p&gt;
-
-&lt;p&gt;　　（脚本可能看起来很麻烦，是我随手找了个守护程序的脚本改的。）&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
       <title>osx下解决emacs执行中文路径命令出错的方法</title>
       <link>http://boxcounter.com/technique/2013-08-08-osx%E4%B8%8B%E8%A7%A3%E5%86%B3emacs%E6%89%A7%E8%A1%8C%E4%B8%AD%E6%96%87%E8%B7%AF%E5%BE%84%E5%91%BD%E4%BB%A4%E5%87%BA%E9%94%99%E7%9A%84%E6%96%B9%E6%B3%95/</link>
       <pubDate>Mon, 12 Aug 2013 00:00:00 +0000</pubDate>
@@ -1633,9 +1724,9 @@ gcc的依赖项GMP/FPMR/MPC也不需要手动下载，在gcc的源码下执行./
 
 &lt;p&gt;在emacs配置文件中增加如下一行：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;(set-language-environment &lt;span style=&#34;color: #a31515&#34;&gt;&amp;#39;utf-8&lt;/span&gt;)
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;(set-language-environment &lt;span style=&#34;color: #a31515&#34;&gt;&amp;#39;utf-8&lt;/span&gt;)
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;话说，测试了好几种方法才解决的，一高兴忘了记下出处。惭愧惭愧，谢谢那位我记不得的博主吧。&lt;/p&gt;
 
@@ -1664,7 +1755,7 @@ gcc的依赖项GMP/FPMR/MPC也不需要手动下载，在gcc的源码下执行./
 某台WinXP sp3系统出现了死机现象，该现象是在安装了我的驱动后才出现的，第一反应是“MD，怎么又泄漏了”。&lt;br /&gt;
 以下是分析过程：&lt;/p&gt;
 
-&lt;h1 id=&#34;poolused的输出:d0f14dd6c2c81221381bb269dedb95d3&#34;&gt;!poolused的输出&lt;/h1&gt;
+&lt;h1 id=&#34;poolused的输出&#34;&gt;!poolused的输出&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;0: kd&amp;gt; !poolused 2
 
@@ -1698,7 +1789,7 @@ SEY4      2970       332752          0            0 UNKNOWN pooltag &#39;SEY4&#3
 fltmgr.sys是微软的文件过滤驱动，一般可以排除由它导致资源泄漏的可能性。于是想到可能是基于fltmgr的minifilter驱动引起此故障。&lt;br /&gt;
 于是继续列举系统中目前以存在的minifilter驱动。&lt;/p&gt;
 
-&lt;h1 id=&#34;fltkd-filters的输出:d0f14dd6c2c81221381bb269dedb95d3&#34;&gt;!fltkd.filters的输出&lt;/h1&gt;
+&lt;h1 id=&#34;fltkd-filters的输出&#34;&gt;!fltkd.filters的输出&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;0: kd&amp;gt; !fltkd.filters
 
@@ -1756,7 +1847,7 @@ Filter List: 8999805c &amp;quot;Frame 1&amp;quot;
 
 &lt;p&gt;而我的驱动正好符合“使用名称解析且晚于该安全管理器驱动程序装载的文件系统过滤器驱动程序”，于是触发了WavxDmgr的资源泄漏BUG。&lt;/p&gt;
 
-&lt;h1 id=&#34;验证:d0f14dd6c2c81221381bb269dedb95d3&#34;&gt;验证&lt;/h1&gt;
+&lt;h1 id=&#34;验证&#34;&gt;验证&lt;/h1&gt;
 
 &lt;pre&gt;&lt;code&gt;0: kd&amp;gt; !for_each_module s -a @#Base @#End &amp;quot;tsni&amp;quot;
 a7e0f300  74 73 6e 69 14 02 00 00-68 c9 54 80 50 c9 54 80  tsni....h.T.P.T.
@@ -1800,7 +1891,7 @@ a7ddb000 a7e14180   WavxDMgr   (deferred)
 &lt;blockquote&gt;
 &lt;p&gt;On 64-bit Windows, if a data structure is misaligned, routines that manipulate the structure, such as RtlCopyMemory and memcpy, will not fault. Instead, they will raise an exception. For example:&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;gt;  &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;#&lt;/span&gt;pragma pack (1) &lt;span style=&#34;color: #008000&#34;&gt;// also set by /Zp switch &lt;/span&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;gt;  &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;#&lt;/span&gt;pragma pack (1) &lt;span style=&#34;color: #008000&#34;&gt;// also set by /Zp switch &lt;/span&gt;
 &amp;gt;  &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; Buffer {
 &amp;gt;      ULONG size;
 &amp;gt;      &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; *ptr;
@@ -1813,17 +1904,17 @@ a7ddb000 a7e14180   WavxDMgr   (deferred)
 &amp;gt;  }
 &amp;gt; 
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;You could use the UNALIGNED macro to fix this:&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;gt;  &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; SetPointer(&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; *p) {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;gt;  &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; SetPointer(&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; *p) {
 &amp;gt;      &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; Buffer s;
 &amp;gt;      *(UNALIGNED &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; *)&amp;amp;s.ptr = p;
 &amp;gt;  }
 &amp;gt; 
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 &lt;/blockquote&gt;
 
 &lt;p&gt;　　我搜了一下，这段话来自&lt;a href=&#34;http://msdn.microsoft.com/en-us/library/windows/hardware/ff559744.aspx&#34;&gt;Porting Issues Checklist&lt;/a&gt;这篇文章。&lt;/p&gt;
@@ -1917,7 +2008,6 @@ CPL &amp;lt; 3.&lt;br /&gt;
 &lt;pre&gt;&lt;code&gt;0: kd&amp;gt; r efl
 efl=00000246
 
-
 0: kd&amp;gt; .formats 0x246
   ......
   Binary:  00000000 00000000 00000000 00000000 00000000 00000000 00000010 01000110
@@ -1926,7 +2016,6 @@ efl=00000246
 
 0: kd&amp;gt; r cr0
 cr0=0000000080050031
-
 
 0: kd&amp;gt; .formats 0x0000000080050031 
   ......
@@ -1940,16 +2029,13 @@ cr0=0000000080050031
 &lt;pre&gt;&lt;code&gt;0: kd&amp;gt; r cr0
 cr0=0000000080050033
 
-
 0: kd&amp;gt; .formats 0000000080050033
   ......
   Binary:  11111111 11111111 11111111 11111111 10000000 00000101 00000000 00110011
   ......
 
-
 0: kd&amp;gt; r efl
 efl=00000286
-
 
 0: kd&amp;gt; .formats 00000286
   ......
@@ -1980,118 +2066,6 @@ The Itanium processor generates an alignment fault when it accesses misaligned d
 &lt;/blockquote&gt;
 
 &lt;p&gt;　　也就是说，确实只有在IA64环境才会凸显出来。&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>有关STATUS_THREAD_IS_TERMINATING</title>
-      <link>http://boxcounter.com/technique/2012-10-16-%E6%9C%89%E5%85%B3STATUS_THREAD_IS_TERMINATING/</link>
-      <pubDate>Tue, 16 Oct 2012 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2012-10-16-%E6%9C%89%E5%85%B3STATUS_THREAD_IS_TERMINATING/</guid>
-      <description>&lt;p&gt;手头有个驱动，因为客户需求的原因，只在x86的2k3和xp系统上做过测试，今天在把它往x64 win7系统移植的时候遇到这么一个问题：&lt;br /&gt;
-　　在PsSetCreateProcessNotifyRoutine注册的回调函数中，通过FltSendMessage发通知给应用层接收者。在发送“进程退出”事件时FltSendMessage总是会返回STATUS_THREAD_IS_TERMINATING（0xC000004B）。&lt;/p&gt;
-
-&lt;p&gt;　　琢磨了一会，找到了问题关键，分析过程如下：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;&lt;p&gt;定位返回STATUS_THREAD_IS_TERMINATING的点&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;1: kd&amp;gt; pc
-fltmgr!FltSendMessage+0x1bf:
-fffff880`011a1ddf call    qword ptr [fltmgr!_imp_FsRtlCancellableWaitForMultipleObjects (fffff880`011a75c8)]
-
-
-1: kd&amp;gt; p
-fltmgr!FltSendMessage+0x1c5:
-fffff880`011a1de5 mov     ebx,eax
-
-
-1: kd&amp;gt; r eax
-eax=c000004b
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;这里定位到在FltSendMessage函数中是FsRtlCancellableWaitForMultipleObjects这个函数返回的这个错误。&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;继续更细致的定位&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;...
-nt! ?? ::NNGAKEGL::`string&#39;+0xcb90:
-fffff800`0418d031 mov     rax,qword ptr gs:[188h]
-fffff800`0418d03a mov     ecx,dword ptr [rax+448h]
-fffff800`0418d040 test    cl,1
-fffff800`0418d043 jne     nt! ?? ::NNGAKEGL::`string&#39;+0xcc16 (fffff800`0418d0b7)
-...
-nt! ?? ::NNGAKEGL::`string&#39;+0xcc16:
-fffff800`0418d0b7 mov     eax,0C000004Bh
-fffff800`0418d0bc jmp     nt!FsRtlCancellableWaitForMultipleObjects+0x69 (fffff800`0416a271)
-...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;很幸运，就是FsRtlCancellableWaitForMultipleObjects这个函数返回的STATUS_THREAD_IS_TERMINATING。
-（有时候要深入好几层函数调用才能定位到错误码的直接返回者）&lt;/p&gt;&lt;/li&gt;
-
-&lt;li&gt;&lt;p&gt;根据2中的汇编码，继续分析&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;1: kd&amp;gt; dp gs:[188h]
-002b:00000000`00000188  fffffa80`0d168b60 
-
-
-1: kd&amp;gt; !pool fffffa80`0d168b60  2 
-Pool page fffffa800d168b60 region is Nonpaged pool
-*fffffa800d168b00 size:  500 previous size:  280  (Allocated) *Thre (Protected)
-            Pooltag Thre : Thread objects, Binary : nt!ps
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;看来这个地址是个线程结构体。
-为了确认这个地址就是线程结构体的开头，再找个线程相关函数来看看吧：&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; u nt!KeGetCurrentThread
-nt!PsGetCurrentThread:
-fffff800`03f23f40 mov   rax,qword ptr gs:[188h]
-fffff800`03f23f49 ret
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;那么不是kthread就是ethread，而汇编码中取值的偏移是0x448，前者大小不对，那看看后者的0x448是什么吧&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt; 1 1: kd&amp;gt; dt nt!_ethread
- 2 nt!_ETHREAD
- 3    ...
- 4    +0x448 CrossThreadFlags : Uint4B
- 5    +0x448 Terminated       : Pos 0, 1 Bit
- 6    +0x448 ThreadInserted   : Pos 1, 1 Bit
- 7    +0x448 HideFromDebugger : Pos 2, 1 Bit
- 8    +0x448 ActiveImpersonationInfo : Pos 3, 1 Bit
- 9    +0x448 Reserved         : Pos 4, 1 Bit
-10    +0x448 HardErrorsAreDisabled : Pos 5, 1 Bit
-11    +0x448 BreakOnTermination : Pos 6, 1 Bit
-12    +0x448 SkipCreationMsg  : Pos 7, 1 Bit
-13    +0x448 SkipTerminationMsg : Pos 8, 1 Bit
-14    +0x448 CopyTokenOnOpen  : Pos 9, 1 Bit
-15    +0x448 ThreadIoPriority : Pos 10, 3 Bits
-16    +0x448 ThreadPagePriority : Pos 13, 3 Bits
-17    +0x448 RundownFail      : Pos 16, 1 Bit
-18    +0x448 NeedsWorkingSetAging : Pos 17, 1 Bit
-19  ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;对照着汇编码，可以知道在FsRtlCancellableWaitForMultipleObjects函数判断了当前线程的ethread::Terminated（行5）这个域，而在我的调试环境中该域是1，于是FsRtlCancellableWaitForMultipleObjects就返回了STATUS_THREAD_IS_TERMINATING。&lt;/p&gt;&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;　　到这里，已经弄清楚了在什么情况下会出现这个错误。那解决方案也很简单，不赘述。&lt;/p&gt;
-
-&lt;p&gt;　　另外，多说两句：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;这个特性是从vista开始引入。&lt;/li&gt;
-&lt;li&gt;目的是为了保证线程结束的处理过程中不被卡住。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;　　参考资料：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://www.osronline.com/showThread.cfm?link=110848&#34;&gt; STATUS_THREAD_IS_TERMINATING returned by FltSendMessage&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
 </description>
     </item>
     

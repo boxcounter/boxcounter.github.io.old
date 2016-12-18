@@ -45,6 +45,24 @@ table tbody tr:nth-child(odd) {
 	margin-top: 10px;
 }
 
+.post h1 {
+	font-size: 24px;
+	margin-top: 32px;
+	margin-bottom: 12px;
+}
+
+.post h2 {
+	font-size: 20px;
+	margin-top: 32px;
+	margin-bottom: 12px;
+}
+
+.post h3 {
+	font-size: 18px;
+	margin-top: 32px;
+	margin-bottom: 12px;
+}
+
 .post img {
 	max-width: 100%;
 	/*border: 1px solid #eee;*/

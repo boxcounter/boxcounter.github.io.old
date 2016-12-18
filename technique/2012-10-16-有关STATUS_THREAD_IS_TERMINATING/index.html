@@ -28,6 +28,8 @@
               
                 <li><a href="/essay">essay</a></li>
               
+                <li><a href="/reading_notes">reading_notes</a></li>
+              
                 <li><a href="/technique">technique</a></li>
               
               </ul>
@@ -42,6 +44,9 @@
         <h1><a href="http://boxcounter.com/technique/2012-10-16-%E6%9C%89%E5%85%B3STATUS_THREAD_IS_TERMINATING/">有关STATUS_THREAD_IS_TERMINATING</a></h1>
         <hr />
         <span class="post-time">2012-10-16</span>
+
+        
+
         <div class="post">
             <p>手头有个驱动，因为客户需求的原因，只在x86的2k3和xp系统上做过测试，今天在把它往x64 win7系统移植的时候遇到这么一个问题：<br />
 　　在PsSetCreateProcessNotifyRoutine注册的回调函数中，通过FltSendMessage发通知给应用层接收者。在发送“进程退出”事件时FltSendMessage总是会返回STATUS_THREAD_IS_TERMINATING（0xC000004B）。</p>
@@ -55,11 +60,9 @@
 fltmgr!FltSendMessage+0x1bf:
 fffff880`011a1ddf call    qword ptr [fltmgr!_imp_FsRtlCancellableWaitForMultipleObjects (fffff880`011a75c8)]
 
-
 1: kd&gt; p
 fltmgr!FltSendMessage+0x1c5:
 fffff880`011a1de5 mov     ebx,eax
-
 
 1: kd&gt; r eax
 eax=c000004b

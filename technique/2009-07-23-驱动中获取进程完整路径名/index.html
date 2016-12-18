@@ -28,6 +28,8 @@
               
                 <li><a href="/essay">essay</a></li>
               
+                <li><a href="/reading_notes">reading_notes</a></li>
+              
                 <li><a href="/technique">technique</a></li>
               
               </ul>
@@ -42,6 +44,9 @@
         <h1><a href="http://boxcounter.com/technique/2009-07-23-%E9%A9%B1%E5%8A%A8%E4%B8%AD%E8%8E%B7%E5%8F%96%E8%BF%9B%E7%A8%8B%E5%AE%8C%E6%95%B4%E8%B7%AF%E5%BE%84%E5%90%8D/">驱动中获取进程完整路径名</a></h1>
         <hr />
         <span class="post-time">2009-07-23</span>
+
+        
+
         <div class="post">
             <p>在OSR上无意中看到一篇文章，关于获取进程完整路径的。贴过来，最后有一点小调整。</p>
 
@@ -97,7 +102,7 @@ It is actually the second issue that often creates problems for programmers beca
 <p>The Proposal
 We suggest a different model for acquiring this information, as shown in Figure 2.</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%">&gt; <span style="color: #0000ff">typedef</span> NTSTATUS (*QUERY_INFO_PROCESS) (
+<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span>&gt; <span style="color: #0000ff">typedef</span> NTSTATUS (*QUERY_INFO_PROCESS) (
 &gt;     __in HANDLE ProcessHandle,
 &gt;     __in PROCESSINFOCLASS ProcessInformationClass,
 &gt;     __out_bcount(ProcessInformationLength) PVOID ProcessInformation,
@@ -234,7 +239,7 @@ The bottom line is that all of these approaches provide a useful name because th
 
 <p>文章里对于如何获取其他进程，提供了两种方法，但是都不太方便，在我的驱动里，我是在PsSetCreateProcessNotifyRoutine的回调函数里获取进程路径，能得到的进程信息是PID，于是动手改了下上面的代码，如下：</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%">NTSTATUS
+<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span>NTSTATUS
     GetProcessImagePath(
         IN  HANDLE   hProcessId,
         OUT PUNICODE_STRING ProcessImagePath

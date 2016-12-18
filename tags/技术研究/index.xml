@@ -1,0 +1,1279 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Boxcounter的烂笔头</title>
+    <link>http://boxcounter.com/tags/%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6/index.xml</link>
+    <description>Recent content on Boxcounter的烂笔头</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <atom:link href="http://boxcounter.com/tags/%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>64位系统的对齐问题</title>
+      <link>http://boxcounter.com/technique/2012-10-25-64%E4%BD%8D%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%AF%B9%E9%BD%90%E9%97%AE%E9%A2%98/</link>
+      <pubDate>Thu, 25 Oct 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-10-25-64%E4%BD%8D%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%AF%B9%E9%BD%90%E9%97%AE%E9%A2%98/</guid>
+      <description>&lt;p&gt;今天在技术群里有位童鞋问了一个问题：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;On 64-bit Windows, if a data structure is misaligned, routines that manipulate the structure, such as RtlCopyMemory and memcpy, will not fault. Instead, they will raise an exception. For example:&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;gt;  &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;#&lt;/span&gt;pragma pack (1) &lt;span style=&#34;color: #008000&#34;&gt;// also set by /Zp switch &lt;/span&gt;
+&amp;gt;  &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; Buffer {
+&amp;gt;      ULONG size;
+&amp;gt;      &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; *ptr;
+&amp;gt;  };
+&amp;gt;
+&amp;gt;  &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; SetPointer(&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; *p) {
+&amp;gt;      &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; Buffer s;
+&amp;gt;      s.ptr = p;  &lt;span style=&#34;color: #008000&#34;&gt;/* will cause alignment fault */&lt;/span&gt;
+&amp;gt;      ...
+&amp;gt;  }
+&amp;gt; 
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;You could use the UNALIGNED macro to fix this:&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;gt;  &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; SetPointer(&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; *p) {
+&amp;gt;      &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; Buffer s;
+&amp;gt;      *(UNALIGNED &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; *)&amp;amp;s.ptr = p;
+&amp;gt;  }
+&amp;gt; 
+&lt;/pre&gt;&lt;/div&gt;
+
+&lt;/blockquote&gt;
+
+&lt;p&gt;　　我搜了一下，这段话来自&lt;a href=&#34;http://msdn.microsoft.com/en-us/library/windows/hardware/ff559744.aspx&#34;&gt;Porting Issues Checklist&lt;/a&gt;这篇文章。&lt;/p&gt;
+
+&lt;p&gt;　　他的问题是：「我对这句 s.ptr = p 不太明白。为什么会引发对齐错误，什么意思？」&lt;/p&gt;
+
+&lt;p&gt;　　我的回答（当时的原话，貌似有点凌乱，群里讨论嘛，想一句说一句，见谅）：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;因为s这个结构体的首地址是被编译器默认对齐的。由于「#pragma pack (1)」，s.ptr肯定不在对齐的地址上。所以访问s.ptr时会触犯x64 win的对齐规定，于是抛出异常。&lt;/li&gt;
+&lt;li&gt;对于x86架构，对于类似这种没有对齐的地址访问，win内核会自动帮你处理好，用户感觉不到这个问题的存在。但实际上会导致系统性能下降。&lt;br /&gt;
+到了x64架构，win决定不帮用户擦屁股了。于是就会抛出异常。&lt;/li&gt;
+&lt;li&gt;x64是按照8字节对齐，&amp;amp;s是对齐的，那s.ptr是处在 （N*8 + 4）的地址上，于是没有对齐。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;　　这时另一位提了一个问题：「#pragma pack (1) 了，对齐地址是按1的倍数来的，为什么会s.ptr不在对齐的地址上啊？」&lt;br /&gt;
+　　我的回答：「pragma pack的对齐只是影响编译器对结构体的padding，这个俗称的对齐，跟硬件手册里的对齐，不是一回事。」&lt;/p&gt;
+
+&lt;p&gt;　　回答完后觉得心理有点不踏实，主要的不确定点是回答3中的「x64是按照8字节对齐」。翻了下手册，果然没这么简单。&lt;br /&gt;
+　　（x64架构的）cpu的对齐是根据数据类型的不同而不同的，对于第一个问题，s.ptr是个指针，确实是按照8个字节来对齐的，所以我的回答没有问题。&lt;br /&gt;
+　　更具体的对齐在《AMD64 Architecture Programmer&amp;rsquo;s Manual Volume 2: System Programming》的「8.2.17  #AC—Alignment-Check Exception (Vector 17)」，如下图：&lt;br /&gt;
+　　&lt;img src=&#34;http://boxcounter.com/images/2012-10-25/Data-Type-Alignment.jpg&#34;/&gt;&lt;/p&gt;
+
+&lt;p&gt;　　还有个问题，为什么不对齐就会影响性能？&lt;br /&gt;
+　　以x64位下的void* 数据类型为例，void&lt;em&gt;是8个字节大小。如果某void&lt;/em&gt; p没有按照8字节对齐，比如下图所示：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;addr:      N*8           (N+1)*8
+           |               |
+offset:     0 1 2 3 4 5 6 7
+          +-+-+-+-+-+-+-+-+-+
+          | |X|X|X|X|X|X|X|X|
+          +-----------------+
+            ^
+            |
+            p
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　如果按照8字节对齐，即ptr处在N*8的位置，那么当需要访问ptr的时候，把ptr的值从mem读到cpu cache，只需要一次读取操作（从N*8到N*8+7，正好8个字节）。&lt;br /&gt;
+　　但是如果如上图所示，那么就不得不读两次，第一次也是从N*8到(N+1)*8，第二次读取(N+1)*8到(N+1)*8+7，然后还要把第一次读的后7个字节和第二次读的第一个字节拼起来。此外，在多核环境下，为了保证对ptr的读取操作的原子性，还必须额外消耗一个bus control。另外，unaligned的ptr还有可能分布在两个cache line中，导致更多额外的处理成本（每次对ptr的修改操作会影响两个cache line，造成更严重的&lt;a href=&#34;http://software.intel.com/en-us/articles/avoiding-and-identifying-false-sharing-among-threads/&#34;&gt;False Sharing&lt;/a&gt;）。&lt;/p&gt;
+
+&lt;p&gt;　　再多想想，有人可能会问：对于WORD类型，只要求2字节对齐，那如果具体的内存是这样呢：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;addr:      N*8
+           |
+offset:     0 1 2 3 4 5 6 7
+          +-+-+-+-+-+-+-+-+
+          | | |X|X| | | | |
+          +---------------+
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　这样虽然是按照2字节对齐，但是并没有在N*8的位置，会不会有性能损耗？&lt;/p&gt;
+
+&lt;p&gt;　　理论上是有的，因为读取到cpu cache后，还有个+2的操作（理论上有，但我不确定到电路那一层，+0和+2的耗时是不是就等价了）。但即便有这个+2的操作，也没太大影响，因为对cpu cache的操作是非常非常快的，而mem-&amp;gt;cpu cache这个操作相对来说就非常耗时了。&lt;br /&gt;
+　　总结：性能损耗主要是因为多了一次mem-&amp;gt;cpu cache操作。&lt;/p&gt;
+
+&lt;p&gt;　　注：&lt;br /&gt;
+　　在整理这篇文章之前，我不确定多一次读操作是不是导致性能损耗的主要原因，于是请教sinster师傅，对话如下：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Boxcounter 18:43:11&lt;br /&gt;
+贾佳师傅，请教个问题：&lt;br /&gt;
+访问unaligned的数据会造成性能下降，比如64位系统，某个void*类型的数据如果是unaligned。那么访问它时会导致2次从内存到cpu cache的读操作，而如果它是aligned，则只需要一次。&lt;br /&gt;
+是因为这个原因吗？&lt;/p&gt;
+
+&lt;p&gt;sinister 18:43:55&lt;br /&gt;
+是，有些系统直接CORE DUMP了。&lt;br /&gt;
+sinister 18:44:44&lt;br /&gt;
+一些RISC的，POWER,SPARC,EPIC 都这样&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;　　后记1：&lt;br /&gt;
+　　提问的童鞋说在x64 WinXP系统里，即使不对齐也没有因为异常而中断下来。&lt;br /&gt;
+　　我试了下，确实如此，x64 win7系统，挂着windbg内核调试，单步步过unaligned操作，并没有任何提示和中断等异样。恢复到一个没有任何调试设置的快照，也是如此。应用层也是一样。&lt;/p&gt;
+
+&lt;p&gt;　　继续琢磨，在AMD手册里翻到这么几段资料：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;还是在「8.2.17  #AC—Alignment-Check Exception (Vector 17)」&lt;br /&gt;
+&lt;blockquote&gt;
+After a processor reset, #AC exceptions are disabled. Software enables the #AC exception by setting&lt;br /&gt;
+the following register bits:&lt;br /&gt;
+• CR0.AM=1.&lt;br /&gt;
+• RFLAGS.AC=1.&lt;br /&gt;
+When the above register bits are set, an #AC can occur only when CPL=3. #AC never occurs when&lt;br /&gt;
+CPL &amp;lt; 3.&lt;br /&gt;
+&lt;/blockquote&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;CR0中AM标志在第18bit，RFLAGS的AC标志也是在18bit
+查看了下我的虚拟机：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; r efl
+efl=00000246
+
+0: kd&amp;gt; .formats 0x246
+  ......
+  Binary:  00000000 00000000 00000000 00000000 00000000 00000000 00000010 01000110
+  ......
+
+
+0: kd&amp;gt; r cr0
+cr0=0000000080050031
+
+0: kd&amp;gt; .formats 0x0000000080050031 
+  ......
+  Binary:  11111111 11111111 11111111 11111111 10000000 00000101 00000000 00110001
+  ......
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可见两个18bit都是0，并没有启用#AC异常。
+为了避免是内核调试器对虚拟系统的干扰造成的，我用livekd抓了个本机系统DMP来分析：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; r cr0
+cr0=0000000080050033
+
+0: kd&amp;gt; .formats 0000000080050033
+  ......
+  Binary:  11111111 11111111 11111111 11111111 10000000 00000101 00000000 00110011
+  ......
+
+0: kd&amp;gt; r efl
+efl=00000286
+
+0: kd&amp;gt; .formats 00000286
+  ......
+  Binary:  00000000 00000000 00000000 00000000 00000000 00000000 00000010 10000110
+  ......
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;结果是一样的，也没有启用#AC异常。&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;　　不明白为什么，难道MSDN上那篇文章里的64bit仅指IA64？&lt;br /&gt;
+　　目前暂没什么好的思路，先记到这里吧。（如果有朋友知道原因，请不吝赐教。）&lt;/p&gt;
+
+&lt;p&gt;　　后记2：&lt;br /&gt;
+　　发现一篇相关的文章：&lt;a href=&#34;http://stackoverflow.com/questions/5498102/how-to-debug-unaligned-accesses-on-amd64-using-visual-studio&#34;&gt;How to debug unaligned accesses on amd64 using Visual Studio?&lt;/a&gt;&lt;br /&gt;
+　　其中有一条回复是：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;&amp;ldquo;How do real world Windows developers track unaligned accesses in their code?&amp;rdquo;. Being a primarily Windows developer myself, I think they just never do it, unless the code has to run on Itanium. And if it has to run on Itanium, the exception will tell the places. What is the real overhead of unaligned access on x86? BTW, you can still use assembly on x64, in .asm files, just not inline assembly.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;　　后记3（2013-01-06）：&lt;br /&gt;
+　　群里的朋友分享了新资料：&lt;a href=&#34;http://msdn.microsoft.com/en-us/library/ms177389.aspx&#34;&gt;__unaligned&lt;/a&gt;，里面有这么一段话：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;The __unaligned modifier is valid for the x64 and Itanium compilers but affects only applications that target an IPF computer. This modifier describes the alignment of the addressed data only; the pointer itself is assumed to be aligned.&lt;br /&gt;
+The Itanium processor generates an alignment fault when it accesses misaligned data, and the time to process the fault weakens performance. Use the __unaligned modifier to cause the processor to read data one byte at a time and avoid the fault. This modifier is not required for x64 applications because the x64 processor handles misaligned data without faulting.&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;　　也就是说，确实只有在IA64环境才会凸显出来。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>ZeroMemory与类对象</title>
+      <link>http://boxcounter.com/technique/2012-09-20-ZeroMemory%E4%B8%8E%E7%B1%BB%E5%AF%B9%E8%B1%A1/</link>
+      <pubDate>Thu, 20 Sep 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-09-20-ZeroMemory%E4%B8%8E%E7%B1%BB%E5%AF%B9%E8%B1%A1/</guid>
+      <description>&lt;p&gt;今天看到一段同事的代码：&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;ZeroMemory(&amp;amp;m_PacketInfo, &lt;span style=&#34;color: #0000ff&#34;&gt;sizeof&lt;/span&gt;(packet_info));
+
+&lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; packet_info
+{
+    string m_strModule;                 &lt;span style=&#34;color: #008000&#34;&gt;//模块&lt;/span&gt;
+    string m_strProtocol;               &lt;span style=&#34;color: #008000&#34;&gt;//协议&lt;/span&gt;
+    string m_strClientHostIP;           &lt;span style=&#34;color: #008000&#34;&gt;//客户端IP&lt;/span&gt;
+    string m_strClientHostPort;         &lt;span style=&#34;color: #008000&#34;&gt;//客户端端口&lt;/span&gt;
+    ...
+};
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;按照我的经验，这种对类对象进行ZeroMemory或者memset的代码会导致程序崩掉。因为会覆盖掉类对象中的关键域，比如虚表。但是同事在vs2005中这样做却很正常。让我很奇怪，于是花了点时间分析了下。&lt;/p&gt;
+
+&lt;p&gt;首先，std::string的vc实现并没有虚表，如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0:000&amp;gt; dt string
+QueueTest!string
+   +0x000 _Myproxy         : Ptr32 std::_Container_proxy
+   +0x004 _Bx              : std::_String_val::_Bxty
+   +0x014 _Mysize          : Uint4B
+   +0x018 _Myres           : Uint4B
+   +0x01c _Alval           : std::allocator
+   =00000000`01202180
+   std::basic_string::npos : Uint4B
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;所以ZeroMemory后不会导致非法访问。&lt;/p&gt;
+
+&lt;p&gt;翻了一下std::string的实现，发现就是一普通的模板类，没有用到继承等OO特性。跟一普通的结构体和一系列配套函数的简单组合没太大区别。&lt;/p&gt;
+
+&lt;p&gt;于是写了一小段测试代码&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;Father&lt;/span&gt;
+{
+&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt;:
+    Father() {}
+    ~Father(){}
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;virtual&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; Show()
+    {
+        printf(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;Father\n&amp;quot;&lt;/span&gt;);
+    }
+};
+
+&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;Son&lt;/span&gt;: &lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; Father
+{
+&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt;:
+    &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; Show()
+    {
+        printf(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;Son\n&amp;quot;&lt;/span&gt;);
+    }
+};
+
+&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; main()
+{
+    Son son;
+
+    son.Show();
+    ZeroMemory(&amp;amp;son, &lt;span style=&#34;color: #0000ff&#34;&gt;sizeof&lt;/span&gt;(Son));
+    son.Show();
+
+    ...
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;我对这段代码的预期是，因为有继承以及虚函数，所以会有虚表。ZeroMemory会导致虚表被破坏，然后在第二次Show的时候非法访问。但实际运行效果依然正常。&lt;/p&gt;
+
+&lt;p&gt;于是检查了一下man的反汇编代码：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0:000:x86&amp;gt; uf main
+QueueTest!main:
+002fd120 push    ebp
+002fd121 mov     ebp,esp
+...
+002fd15d lea     ecx,[ebp-14h]
+002fd160 call    QueueTest!ILT+3860(??0SonQAEXZ) (002faf19)
+002fd165 mov     dword ptr [ebp-4],0
+002fd16c lea     ecx,[ebp-14h]
+002fd16f call    QueueTest!ILT+4840(?ShowSonUAEXXZ) (002fb2ed)
+002fd174 push    4
+002fd176 push    0
+002fd178 lea     eax,[ebp-14h]
+002fd17b push    eax
+002fd17c call    QueueTest!ILT+1520(_memset) (002fa5f5)
+002fd181 add     esp,0Ch
+002fd184 lea     ecx,[ebp-14h]
+002fd187 call    QueueTest!ILT+4840(?ShowSonUAEXXZ) (002fb2ed)
+002fd18c mov     dword ptr [ebp-4],0FFFFFFFFh
+002fd193 lea     ecx,[ebp-14h]
+002fd196 call    QueueTest!ILT+4125(??1SonQAEXZ) (002fb022)
+...
+002fd1c9 mov     esp,ebp
+002fd1cb pop     ebp
+002fd1cc ret
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可以看出来，这段代码里根本就没有用到虚表，而是直接把内嵌函数地址。仔细琢磨琢磨，这样做确实有些道理：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;son是明确的Son类对象，son.Show是一个明确的函数，无需使用虚表进行间接调用。&lt;/li&gt;
+&lt;li&gt;效率更高。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;再想想什么时候才需要虚表呢？动态绑定。&lt;br /&gt;
+于是改了改测试代码，如下（Father和Son的定义不变）：&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; main()
+{
+    Son son;
+    Father *pson = (Father*)&amp;amp;son;
+
+    pson-&amp;gt;Show();
+    ZeroMemory(&amp;amp;son, &lt;span style=&#34;color: #0000ff&#34;&gt;sizeof&lt;/span&gt;(Son));
+    pson-&amp;gt;Show();
+    ...
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;　　看看反汇编码：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0:000:x86&amp;gt; uf main
+QueueTest!main:
+011ad120 push    ebp
+011ad121 mov     ebp,esp
+...
+011ad15d lea     ecx,[ebp-14h]
+011ad160 call    QueueTest!ILT+3860(??0SonQAEXZ) (011aaf19)
+011ad165 mov     dword ptr [ebp-4],0
+011ad16c lea     eax,[ebp-14h]
+011ad16f mov     dword ptr [ebp-20h],eax
+011ad172 mov     eax,dword ptr [ebp-20h]
+011ad175 mov     edx,dword ptr [eax]
+011ad177 mov     esi,esp
+011ad179 mov     ecx,dword ptr [ebp-20h]
+011ad17c mov     eax,dword ptr [edx]
+011ad17e call    eax &amp;lt;--------
+011ad180 cmp     esi,esp
+011ad182 call    QueueTest!ILT+3870(__RTC_CheckEsp) (011aaf23)
+011ad187 push    4
+011ad189 push    0
+011ad18b lea     eax,[ebp-14h]
+011ad18e push    eax
+011ad18f call    QueueTest!ILT+1520(_memset) (011aa5f5)
+011ad194 add     esp,0Ch
+011ad197 mov     eax,dword ptr [ebp-20h]
+011ad19a mov     edx,dword ptr [eax]
+011ad19c mov     esi,esp
+011ad19e mov     ecx,dword ptr [ebp-20h]
+011ad1a1 mov     eax,dword ptr [edx]
+011ad1a3 call    eax &amp;lt;--------
+011ad1a5 cmp     esi,esp
+011ad1a7 call    QueueTest!ILT+3870(__RTC_CheckEsp) (011aaf23)
+011ad1ac mov     dword ptr [ebp-4],0FFFFFFFFh
+011ad1b3 lea     ecx,[ebp-14h]
+...
+011ad1e9 mov     esp,ebp
+011ad1eb pop     ebp
+011ad1ec ret
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可以看到这次用了虚表。再运行，果然崩了。&lt;/p&gt;
+
+&lt;p&gt;但是gcc的实现不同，于是最开始的那行ZeroMemory一跑就崩。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>关于STATUS_INVALID_DEVICE_OBJECT_PARAMETER和STATUS_MOUNT_POINT_NOT_RESOLVED</title>
+      <link>http://boxcounter.com/technique/2012-05-20-%E5%85%B3%E4%BA%8ESTATUS_INVALID_DEVICE_OBJECT_PARAMETER%E5%92%8CSTATUS_MOUNT_POINT_NOT_RESOLVED/</link>
+      <pubDate>Sun, 20 May 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-05-20-%E5%85%B3%E4%BA%8ESTATUS_INVALID_DEVICE_OBJECT_PARAMETER%E5%92%8CSTATUS_MOUNT_POINT_NOT_RESOLVED/</guid>
+      <description>&lt;p&gt;很久之前，我写了篇&lt;a href=&#34;http://www.boxcounter.com/showthread.php?tid=38&#34;&gt;关于STATUS_INVALID_DEVICE_OBJECT_PARAMETER的blog&lt;/a&gt;，里面提到使用STATUS_REPARSE的FsFilter（后简称为R-FsFilter）对上层FsFilter造成的恶劣干扰。&lt;/p&gt;
+
+&lt;p&gt;　　这两天看Alex Carp的文章，发现事情貌似有转机。具体参考他的&lt;a href=&#34;http://fsfilters.blogspot.com/2012/02/reparsing-to-different-volume-in-win7.html&#34;&gt;Reparsing to a Different Volume in Win7 and Win8&lt;/a&gt;（需要爬墙）。&lt;/p&gt;
+
+&lt;p&gt;　　我总结一下：&lt;br /&gt;
+　　目前的win8提供了一种新的ECP和相应的数据结构，保证在返回STATUS_MOUNT_POINT_NOT_RESOLVED的时候开发者可以获得目标FO的FLT_FILE_NAME_INFORMATION和FLT_INSTANCE。&lt;br /&gt;
+　　用我那篇blog的原型就是，当驱动A调用FltCreateFile失败后（Alex的文章里只提到了STATUS_MOUNT_POINT_NOT_RESOLVED，但我猜测对STATUS_INVALID_DEVICE_OBJECT_PARAMETER应该也是适用的，我还没有动手测试，只是看IopCheckTopDeviceHint的实现做出的猜测），可以从ECP中获取到本次打开操作的目标FO的FLT_FILE_NAME_INFORMATION和FLT_INSTANCE，然后再次FltCreateFile就可以了。&lt;/p&gt;
+
+&lt;p&gt;　　说来简单，但实际上影响挺大的，这相当于要求所有的FsFilter开发者在调用FltCreateFile时都处理这种错误。仅仅是因为目标系统里可能会存在一个R-FsFilter。&lt;/p&gt;
+
+&lt;p&gt;　　相信不会有太多的开发者会多写这些代码。&lt;br /&gt;
+　　而且这个错误对上层FsFilter的开发者来说根本就不是问题。如果在客户机上出现这种问题，完全可以如此解释：“你看，卸载您安装的这个产品（姑且称为T）的驱动后，我公司的产品就能正常工作了。但是只要一安装它，我公司的产品就出问题了，你看你看，另一个公司的产品也不能工作了。这明显是T的问题，跟我公司的产品没有半毛钱关系。”&lt;/p&gt;
+
+&lt;p&gt;　　悲催的是R-FsFilter开发者，知道问题有解决方案，但是却不能在自己的代码里解决……。&lt;/p&gt;
+
+&lt;p&gt;　　或者，R-FsFilter开发者在开发完之后，再多写一个紧贴着它的上层驱动，专门处理STATUS_MOUNT_POINT_NOT_RESOLVED/STATUS_INVALID_DEVICE_OBJECT_PARAMETER？这要求必须使用支持固定加载层次的minifilter框架，并且MS要足够给面子提供两个相邻的Altitude，不过以我之前申请Altitude的经验，貌似有些难度。&lt;/p&gt;
+
+&lt;p&gt;　　另外推荐Alex-Cap的几篇关于reparse技术的博文。其实他blog的每篇技术文章都推荐仔细阅读，我几乎备份了他所有的博文……&lt;/p&gt;
+
+&lt;p&gt;　　注：由于本人能力有限，行文难免有错，请不吝赐教，感谢。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>TEB KPCR GS in x64</title>
+      <link>http://boxcounter.com/technique/2012-02-08-TEB%20KPCR%20GS%20in%20x64/</link>
+      <pubDate>Wed, 08 Feb 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-02-08-TEB%20KPCR%20GS%20in%20x64/</guid>
+      <description>&lt;p&gt;在x86中，如果折腾TEB或者KPCR，可能需要处理fs:[0x???]这样的地址，在x86中，咱们可以通过dg命令来手动查看：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;kd&amp;gt; dg @fs
+                                  P Si Gr Pr Lo
+Sel    Base     Limit     Type    l ze an es ng Flags
+---- -------- -------- ---------- - -- -- -- -- --------
+0030 ffdff000 00001fff Data RW Ac 0 Bg Pg P  Nl 00000c93
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;ffdff000+0x???就是要找的地址了。
+当然，也可以从GDTR开始从头完全手动找，不过要麻烦一些。&lt;/p&gt;
+
+&lt;p&gt;到了x64，TEB和KPCR都改由gs来索引了，上述dg或者GDTR方法就不灵了。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;1: kd&amp;gt; dg @gs
+                                                P Si Gr Pr Lo
+Sel        Base              Limit          Type    l ze an es ng Flags
+---- ----------------- ----------------- ---------- - -- -- -- -- --------
+002B 00000000`00000000 00000000`ffffffff Data RW Ac 3 Bg Pg P  Nl 00000cf3
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Base为0是因为flat模式。
+那么x64中我们如何手动查看gs:[0x???]呢？&lt;/p&gt;
+
+&lt;p&gt;首先需要说明的是，在x64中，gs的base内容已经挪到MSR(Model-Specific Registers) (boxcounter: 可参考注1)，需要使用如下方法：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;1: kd&amp;gt; rdmsr 0xC0000101
+msr[c0000101] = fffff880`009f2000
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;此时gs:[0x???]指示的地址是fffff880`009f2000+0x???
+其中0xC0000101就是gs的地址，每个MSR寄存器都有一个地址(boxcounter: 可参考注2)。
+再来校验一下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;1: kd&amp;gt; !pcr
+KPCR for Processor 1 at fffff880009f2000:
+...[省略余下无关输出内容]
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;注：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;出自《AMD64 Architecture Programmer&amp;rsquo;s Manual Volume 2 [System Programming]》的“2.2.3 Segmentation”的“The FS and GS descriptor base-address fields are expanded to 64 bits and used in effective-address
+ulations. The 64 bits of base address are mapped to model-specific registers (MSRs), and can .only be loaded using the WRMSR instruction.”&lt;/li&gt;
+&lt;li&gt;出自《Intel? 64 and IA-32 Architectures Software Developer&amp;rsquo;s Manual [Volume 3B - System Programming Guide, Part 2]》中的“Appendix B Model-Specific Registers (MSRs)”的“Table B-2.  IA-32 Architectural MSRs (Contd.)”&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;参考资料：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;AMD64 Architecture Programmer&amp;rsquo;s Manual&lt;/li&gt;
+&lt;li&gt;Intel? 64 and IA-32 Architectures Software Developer&amp;rsquo;s Manual&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>无锁数组</title>
+      <link>http://boxcounter.com/technique/2012-01-15-%E6%97%A0%E9%94%81%E6%95%B0%E7%BB%84/</link>
+      <pubDate>Sun, 15 Jan 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-01-15-%E6%97%A0%E9%94%81%E6%95%B0%E7%BB%84/</guid>
+      <description>&lt;p&gt;项目里有一个地方可能要去掉用于链表的锁，但是又得保证读写互斥。于是琢磨了一个土办法：
+（琢磨时的目标是用于异步发送日志，即多个日志存储者，一个发送者，接收者在另一个进程不用管它）&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;#define N 200&lt;/span&gt;
+PVOID g_Buffer[N] = {0};
+UINT  g_uSaveIndex = 0;
+
+VOID 
+    Save(
+        PVOID pLog
+    )
+{
+    UINT uMySaveIndex = 0;
+    PVOID pOldLog = NULL;
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// 获取目前可以操作的数组下标&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    uMySaveIndex = InterlockedIncrement(&amp;amp;g_uSaveIndex) % N;
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// 存储日志&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    pOldLog = InterlockedExchangePointer(g_Buffer[uMySaveIndex], pLog);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL != pOldLog)
+    {
+        &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;//     这个数组单元有老日志，释放这条老日志。&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;//     （这条老日志距离本条日志中间已经有2000条日志了，&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// 这么久都没有发送出去，说明日志存储速度可能远大于发送速度，&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// 只能抛弃一部分日志了。&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;//     如果不希望抛弃任何日志，那可以考虑使用链表，而不是用数组。&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    }
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt;;
+}
+
+VOID 
+    Send(
+        VOID
+    )
+{
+    &lt;span style=&#34;color: #0000ff&#34;&gt;static&lt;/span&gt; UINT uSendIndex = 0;
+    PVOID pLogToSend = NULL;
+
+    pLogToSend = InterlockedExchangePointer(g_Buffer[uSendIndex++ % N], NULL);
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// 发送并清理日志&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// ...&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt;;
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+</description>
+    </item>
+    
+    <item>
+      <title>SEH分析笔记（X64篇）</title>
+      <link>http://boxcounter.com/technique/2011-11-04-SEH-x64/</link>
+      <pubDate>Fri, 04 Nov 2011 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2011-11-04-SEH-x64/</guid>
+      <description>&lt;p&gt;2015-07-25，注：因为排版过于复杂繁琐，目前仅提供html文件，请谅解。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/SEH%E5%88%86%E6%9E%90%E7%AC%94%E8%AE%B0%EF%BC%88x64%E7%AF%87%EF%BC%89_v1.0.0.zip&#34;&gt;SEH分析笔记（x64篇）_v1.0.0.zip&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>关于完成例程（Completion Routine）</title>
+      <link>http://boxcounter.com/technique/2011-10-26-%E5%85%B3%E4%BA%8E%E5%AE%8C%E6%88%90%E4%BE%8B%E7%A8%8B%EF%BC%88Completion%20Routine%EF%BC%89/</link>
+      <pubDate>Wed, 26 Oct 2011 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2011-10-26-%E5%85%B3%E4%BA%8E%E5%AE%8C%E6%88%90%E4%BE%8B%E7%A8%8B%EF%BC%88Completion%20Routine%EF%BC%89/</guid>
+      <description>&lt;p&gt;通常使用完成例程有这么三步：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;调用IoCopyCurrentIrpStackLocationToNext(&amp;hellip;)函数，把当前的IRP栈数据复制一份到下一层。&lt;/li&gt;
+&lt;li&gt;调用IoSetCompletionRoutine(&amp;hellip;)函数，为IRP设置完成例程。&lt;/li&gt;
+&lt;li&gt;调用IoCallDriver(&amp;hellip;)函数，把IRP传递到下一层驱动对象。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;DDK对使用完成例程还有如下要求：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;与&amp;rsquo;IRQL&amp;rsquo;相关的要求(因为完成例程有肯能运行在DISPATCH_LEVEL级，所有对IRQL有要求)：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;对于要求运行在低IRQL上的部分内核函数(如IoDeleteDevice、ObQueryNameString), 完成例程无法很安全的调用它们。&lt;/li&gt;
+&lt;li&gt;完成例程使用的数据结构必须从非分页内存中分配。DDK上关于前面提到的“数据结构”讲述很模糊，像是完成例程的context参数。不过我觉得，除了在栈上分配的空间外，完成例程中所有的内存分配都应该在非分页堆中分配。&lt;/li&gt;
+&lt;li&gt;完成例程不能放在分页内存中。&lt;/li&gt;
+&lt;li&gt;完成例程不能&amp;rsquo;申请资源（acquire resources）&amp;rsquo;、&amp;rsquo;mutexts&amp;rsquo;、&amp;rsquo;fast mutexes&amp;rsquo;。但是可以申请自旋锁。（我没有理解&amp;rsquo;申请资源&amp;rsquo;具体指的是什么）&lt;/li&gt;
+&lt;/ol&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;检查PendingReturned标志（这一方面，DDK上说的很清楚，就不画蛇添足翻译了。个人感觉MS在MSDN上真是费了不少心血，绝大部分的句子都是用的最基本的语法，而且描述的很清楚）&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Unless the completion routine signals an event, it must check the Irp-&amp;gt;PendingReturned flag. If this flag is set, the completion routine must call IoMarkIrpPending to mark the IRP as pending.&lt;/li&gt;
+&lt;li&gt;If a completion routine signals an event, it should not call IoMarkIrpPending.&lt;/li&gt;
+&lt;/ol&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;返回值：&lt;br /&gt;
+过滤驱动的完成例程只能有两种返回值：&amp;rsquo;STATUS_SUCCESS&amp;rsquo;，或者&amp;rsquo;STATUS_MORE_PROCESSING_REQUIRED&amp;rsquo;。其他任何的返回值都会被IO manager重置为&amp;rsquo;STATUS_SUCCESS&amp;rsquo;。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;把IRP包放到work queue中应注意的：&lt;br /&gt;
+先调用IoMarkIrpPending(&amp;hellip;)，再把IRP包放到queue中。如果顺序反了，则在两者调用的之间的那段时间，该IRP包可能已经被其他驱动处理函数从queue中拿出，处理完毕，并且释放掉了该IRP包。这种情况下，可能导致系统崩溃。
+还有一些关于完成例程在哪些情况下，应该返回&amp;rsquo;STATUS_MORE_PROCESSING_REQUIRED&amp;rsquo;。这里就不罗嗦了，具体看DDK中“Constraints on Completion Routines”这一节。&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>卷的文件系统识别、卷的挂载以及路径解析</title>
+      <link>http://boxcounter.com/technique/2011-10-25-%E5%8D%B7%E7%9A%84%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E8%AF%86%E5%88%AB%E3%80%81%E5%8D%B7%E7%9A%84%E6%8C%82%E8%BD%BD%E4%BB%A5%E5%8F%8A%E8%B7%AF%E5%BE%84%E8%A7%A3%E6%9E%90/</link>
+      <pubDate>Tue, 25 Oct 2011 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2011-10-25-%E5%8D%B7%E7%9A%84%E6%96%87%E4%BB%B6%E7%B3%BB%E7%BB%9F%E8%AF%86%E5%88%AB%E3%80%81%E5%8D%B7%E7%9A%84%E6%8C%82%E8%BD%BD%E4%BB%A5%E5%8F%8A%E8%B7%AF%E5%BE%84%E8%A7%A3%E6%9E%90/</guid>
+      <description>
+
+&lt;p&gt;前段时间琢磨文件过滤驱动的时候碰到一个棘手的问题，当时挂上wrk内核分析，发现了问题的关键点。分析的过程中明显感觉自己对IoMgr、ObjMgr、Fsd、Volume这些组件的结构关系掌握得很烂，于是最近这几天专门又挂上wrk内核，一点一点的追踪。有了一点收获，记录在这里，备忘。顺便也许会给一些朋友一点点帮助。&lt;/p&gt;
+
+&lt;h1 id=&#34;卷的创建&#34;&gt;卷的创建&lt;/h1&gt;
+
+&lt;p&gt;FtDisk.sys（或Disk.sys）调用FtpCreateNewDevice（或DiskCreateFdo）为卷创建FDO。&lt;br /&gt;
+该函数会调用IoCreateDevice来创建DO，即卷的FDO。IoCreateDevice创建完毕DO后，会调用ObInsertObject将FDO挂入ObjMgr的空间，就是咱们用WinObj或WinObjEx看到的那个树形组织。&lt;br /&gt;
+总结来说，调用关系如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;FtpCreateNewDevice
+    |- IoCreateDevice
+        |- ObCreateObject
+            |- ObInsertObject
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这个过程完毕后，WinObj中 \Device\HarddiskVolumeX 的节点就“指向”了上面过程中创建的 FDO（后面称之为DiskVolumeFDO）。
+注：Disk.sys是开源的，源码在wdk中。FtDisk没有源码，所以我调试的时候主要是参考的Disk.sys源码和IoCreateDevice的调用栈。&lt;/p&gt;
+
+&lt;h1 id=&#34;卷的挂载&#34;&gt;卷的挂载&lt;/h1&gt;
+
+&lt;p&gt;系统初始化时，为了节省不必要的资源损耗，并不会将所有的文件系统（后简称fsd）都加载。而是另外提供一个功能模块Fs_rec.sys来根据具体的卷来加载必须的fsd。具体的过程如下：&lt;/p&gt;
+
+&lt;p&gt;Fs_rec.sys在初始化时，会声明几个MS支持的fsd类型的伪对象，比如fat、ntfs、cdfs、udfs。并通过调用IoRegisterFileSystem来把这几个伪对象挂入一个全局队列（请参考这个函数的源码），这个队列里保存着系统中所有的文件系统的CDO。而实际上在Fs_rec初始化的这个阶段，这个全局队列里实际里保存的都是Fs_rec创建的伪对象。这样做的目的是什么呢，咱们继续往下看。&lt;br /&gt;
+当系统需要访问某个卷中的文件或目录等数据时，如果发现该卷没有挂载任何Fsd，就会调用IopMountVolume来挂载对应的Fsd（可参考wrk源码中的IopCheckVpbMounted函数）。这个函数会遍历之前提到的那个全局队列中的所有结点，挨个给链表中的结点包含的对象的发送IRP_MJ_FILE_SYSTEM_CONTROL.IRP_MN_MOUNT_VOLUME请求。&lt;br /&gt;
+而前面咱们提到，这个时候队列里的全是伪对象，这些伪对象的Driver_object是Fs_rec.sys。于是Fs_rec这个时候会接收并处理这个IRP_MJ_FILE_SYSTEM_CONTROL请求，并针对具体的伪对象，比如fat的伪对象，来判断需要挂载的卷是否是fat卷。如果不是，则返回失败。如果是，那么Fs_rec就会把FastFat.sys加载到系统中，然后Fs_rec自身返回失败。而FastFat在初始化过程中，又会调用IoRegisterFileSystem把自己的CDO挂入那个全局链表（请参看fastfat源码中的fatinit.c中的DriverEntry函数）。这个时候全局链表就存在真正的fsd的CDO。而因为之前Fs_rec自身返回了失败，于是IopMountVolume会接着遍历全局链表，于是就会发现真正的fastfat的CDO，这个时候再发送IRP_MJ_FILE_SYSTEM_CONTROL.IRP_MN_MOUNT_VOLUME请求，接收到的返回值就是成功了。因为FastFat确实会真正的完成了整个卷的挂载过程。&lt;/p&gt;
+
+&lt;p&gt;总结一下：&lt;/p&gt;
+
+&lt;p&gt;最初，全局链表中只有Fs_rec创建的伪对象，这些伪对象负责把对应的fsd加载到系统，并返回错误，推动整个链表的遍历，直到真正的fsd完成卷的挂载，才会返回成功，结束遍历。
+最初在梳理框架的时候参考的是《windows internals》，里面是这么描述的：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;“After loading a file system driver, File System Recognizer forwards the mount IRP to the driver and lets the file system driver claim ownership of the volume.”[/quote]而实际上如我之前的描述，fs_rec只是负责把fsd加载到系统，并没把挂载请求发送给fsd。而是IopMountVolume发送这个请求。我们可以进一步看下调用栈，采用的是win2003的虚拟系统：&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;pre&gt;&lt;code&gt;f78de190 808ed241 84a32340 84db4000 00000000 Fastfat!DriverEntry
+f78de260 808ed355 800002a0 00000001 00000000 nt!IopLoadDriver+0x687
+f78de288 80991a9b 800002a0 f78de310 f78de38c nt!IopLoadUnloadDriver+0x43
+f78de304 8088284c f78de394 f78de39c 8082c605 nt!NtLoadDriver+0x143
+f78de304 8082c605 f78de394 f78de39c 8082c605 nt!KiFastCallEntry+0xfc
+f78de380 f779b15b f78de394 80a45be4 84685f08 nt!ZwLoadDriver+0x11
+f78de39c f779b9b3 c000010e f779b906 80a45be4 Fs_Rec!FsRecLoadFileSystem+0x4f
+f78de3c4 f779b0b0 84685f08 85836f68 84685f08 Fs_Rec!FatRecFsControl+0x35
+f78de3d4 809ab1d2 84685f08 85836f68 84685f08 Fs_Rec!FsRecFsControl+0x6c
+f78de404 8081f881 808ed918 f78de43c 808ed918 nt!IovCallDriver+0x110
+f78de410 808ed918 84f1e8d0 8089f540 85046ea0 nt!IofCallDriver+0x11
+f78de43c 808edc0c 84685f08 80a46150 85046ea0 nt!IopLoadFileSystemDriver+0x60
+f78de490 80822ffc c000019c 84a5b800 00000000 nt!IopMountVolume+0x2ca
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;上面是fsd的加载过程，可见，是由Fs_rec来完成的。再看看卷挂载的调用栈：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;f78de254 b94eec7f 844d45d0 84b4c948 84b9af00 Fastfat!FatMountVolume
+f78de274 b94eed28 844d45d0 858aae70 4ec07aef Fastfat!FatCommonFileSystemControl+0x3f
+f78de2c0 809ab1d2 84772e20 858aae70 858aafb0 Fastfat!FatFsdFileSystemControl+0x82
+f78de2f0 8081f881 f732d23e f78de370 f732d23e nt!IovCallDriver+0x110
+f78de2fc f732d23e 84df2bd0 858aae70 00000000 nt!IofCallDriver+0x11
+f78de370 f732d616 84df2bd0 858aae70 80a45be4 fltMgr!FltpFsControlMountVolume+0x186
+f78de3a0 809ab1d2 84df2bd0 858aae70 858aafd4 fltMgr!FltpFsControl+0x5a
+f78de3d0 8081f881 f74ef27c f78de404 f74ef27c nt!IovCallDriver+0x110
+f78de3dc f74ef27c 80a45be4 84917210 00000000 nt!IofCallDriver+0x11
+f78de404 809ab1d2 84917210 858aae70 84f1e8d0 Dfs!DfsFilterFsControl+0x82
+f78de434 8081f881 808edaf4 f78de490 808edaf4 nt!IovCallDriver+0x110
+f78de440 808edaf4 80a46150 85046ea0 80a461d0 nt!IofCallDriver+0x11
+f78de490 80822ffc 84917210 84a5b800 00000000 nt!IopMountVolume+0x1b2
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;OK，整个框架说完了，咱们来细说fsd的挂载过程，
+Fsd会在自己的IRP_MJ_FILE_SYSTEM_CONTROL.IRP_MN_MOUNT_VOLUME响应函数里会为这个待挂载的卷创建一个FsdVolumeFDO（可参考fastfat源码中fsctrl.c中的FatMountVolume函数）。并对DiskVolumeFDO-&amp;gt;vpb进行设置，使&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;DiskVolumeFDO-&amp;gt;vpb-&amp;gt;DeviceObject = FsdVolumeFDO，
+DiskVolumeFDO-&amp;gt;vpb-&amp;gt;RealDevice = DiskVolumeFDO。
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;到这里，卷和Fsd就通过vpb建立了连接，而Fsd也通过FsdVolumeFDO向系统声明了自己负责这个卷进行解析、管理。&lt;/p&gt;
+
+&lt;p&gt;这样，挂载之后，所有这个卷上的数据请求，比如文件、目录的打开、删除、读写，都会被转交给FsdVolumeFDO，最后由Fsd进行处理。具体的转交过程在后面描述。&lt;/p&gt;
+
+&lt;h1 id=&#34;卷中文件-目录的路径解析&#34;&gt;卷中文件、目录的路径解析&lt;/h1&gt;
+
+&lt;p&gt;现在咱们来说说系统访问具体某个文件时，系统的解析过程。以访问\??\c:\windows\boxcounter.dll这个文件为例。&lt;br /&gt;
+当ObjMgr接收到这个访问请求时，会在它的名空间里对这个路径进行解析，在解析的过程中它发现\??\c:实际指向\Device\HarddiskVolume0，这是一个Device，指向DiskVolumeFDO，它提供了路径解析函数IopParseDevice（保存在object_header-&amp;gt;Type-&amp;gt;TypeInfo-&amp;gt;ParseProcedure中）。&lt;br /&gt;
+ObjMgr使用IopParseDevice继续对剩余路径\windows\boxcounter.dll进行解析，最后导致ObjMgr发送一个打开请求给Fsd（没有上层文件过滤驱动的情况下），发送的方式可能有两种：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;使用fastio函数&lt;/li&gt;
+&lt;li&gt;分配并初始化一个IRP，然后通过IoCallDriver，将它发送到fsd。&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;但是咱们在回顾下，对于整个路径解析过程，ObjMgr只在自己的名空间里找到了DiskVolumeFDO，并没有找到具体的fsd。那么它是如何把请求交给fsd的呢。答案就是2中提到的vpb。ObjMgr通过DiskVolumeFDO-&amp;gt;vpb-&amp;gt;DeviceObject找到了FsdVolumeFDO，然后把请求发到这个FDO上，最后Fsd接收到这个请求，完成了剩余的解析过程。&lt;/p&gt;
+
+&lt;p&gt;在分析过程中，我很奇怪为什么MS没有把FSD和Disk驱动做成一个设备栈，想来想去没有想出什么很出众的解释。于是请教sinister师傅，得到这样的解释，附在这里：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;嘿黑 11:06:17&lt;br /&gt;
+贾佳师傅，有个问题请教：&lt;br /&gt;
+MS为什么不把FSD和磁盘驱动堆叠成一个设备栈，而要用vpb来链接两者。有什么原因吗？或者说有什么历史原因？&lt;/p&gt;
+
+&lt;p&gt;sinister 9:26:48&lt;br /&gt;
+我觉得是设计的考虑，因为FSD层单独出来，也是一个区域的划分，比如网络层的TDI驱动，其实就是个FSD的应用。这种设计符合MS的CLIENT/SERVER 的设计模型，因为封装且又不开源的原因，只要上层要数据下层返回就行。这样不必关心下面的细节。又能留出接口。像LINUX这种开源的设计，这种实现就基本上 FS与BLOCK（磁盘设备）层之间没有什么明显的划分了。都是通过一个结构制过去就行了。连设备栈这种东西都没有。 [/quote]&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;参考资料：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;wrk内核&lt;/li&gt;
+&lt;li&gt;《windows internals》（第四版、第五版）&lt;/li&gt;
+&lt;li&gt;《Windows内核情景分析-采用开源代码ReactOS》&lt;/li&gt;
+&lt;li&gt;FastFat源码&lt;/li&gt;
+&lt;li&gt;“关于文件系统和磁盘驱动的一点学习心得”- weolar&lt;/li&gt;
+&lt;li&gt;“Inside WINDOWS NT Object Manager”   - gloomy&lt;br /&gt;&lt;/li&gt;
+&lt;li&gt;disk.sys源码&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>有关IoEnumerateRegisteredFiltersList</title>
+      <link>http://boxcounter.com/technique/2011-10-25-%E6%9C%89%E5%85%B3%20IoEnumerateRegisteredFiltersList/</link>
+      <pubDate>Tue, 25 Oct 2011 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2011-10-25-%E6%9C%89%E5%85%B3%20IoEnumerateRegisteredFiltersList/</guid>
+      <description>&lt;p&gt;有关于IoEnumerateRegisteredFiltersList
+昨天逆一个驱动的时候发现静态分析出来的逻辑跟动态调试的逻辑不一致，继续跟下去，发现分歧处在IoEnumerateRegisteredFiltersList函数，原型如下：&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;NTSTATUS
+    IoEnumerateRegisteredFiltersList(
+        IN  PDRIVER_OBJECT  *DriverObjectList,
+        IN  ULONG  DriverObjectListSize,
+        OUT PULONG  ActualNumberDriverObjects
+    );
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;其中对DriverObjectList参数的解释，在WDK 7600.16385.1 的文档中是这样：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;“The filter drivers are enumerated in order of decreasing distance from the base file system. The first element (index zero) in the DriverObjectList array represents the filter that is attached farthest from the file system. The second entry is for the next-farthest filter, and so on. The last entry in the array is for the filter that is closest to the base file system. ”&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;WDK是说，DriverObjectList中的DrvObj是按照顺序排列的，离FSD最远的排最头（第一个元素），反之则排在最末尾。&lt;br /&gt;
+可实际调试的结果正好相反，查看了下wrk代码，&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;NTSTATUS
+    IoEnumerateRegisteredFiltersList(
+        IN  PDRIVER_OBJECT  *DriverObjectList,
+        IN  ULONG           DriverObjectListSize,
+        OUT PULONG          ActualNumberDriverObjects
+    )
+{
+    &lt;span style=&#34;color: #008000&#34;&gt;// ...... 无关代码，略&lt;/span&gt;
+ 
+    entry = IopFsNotifyChangeQueueHead.Flink;
+ 
+    &lt;span style=&#34;color: #0000ff&#34;&gt;while&lt;/span&gt; ((numListEntries &amp;gt; 0) &amp;amp;&amp;amp; (entry != &amp;amp;IopFsNotifyChangeQueueHead)) {
+ 
+        nPacket = CONTAINING_RECORD( entry, NOTIFICATION_PACKET, ListEntry );
+ 
+        ObReferenceObject(nPacket-&amp;gt;DriverObject);
+ 
+        *DriverObjectList = nPacket-&amp;gt;DriverObject;
+        DriverObjectList++;
+ 
+        entry = entry-&amp;gt;Flink;
+        numListEntries--;
+    }
+ 
+    &lt;span style=&#34;color: #008000&#34;&gt;// ...... 无关代码，略&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;可以看出，返回的DriverObjectList中的DrvObj都是从IopFsNotifyChangeQueueHead链表中取出的，而且两个链表中的元素摆放顺序是一致的。&lt;/p&gt;
+
+&lt;p&gt;那再来看看IopFsNotifyChangeQueueHead中的元素是按什么顺序摆放的：
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;NTSTATUS
+    IoRegisterFsRegistrationChange(
+        IN PDRIVER_OBJECT DriverObject,
+        IN PDRIVER_FS_NOTIFICATION DriverNotificationRoutine
+    )
+{
+    &lt;span style=&#34;color: #008000&#34;&gt;// ...... 无关代码，略&lt;/span&gt;
+ 
+    nPacket-&amp;gt;DriverObject = DriverObject;
+    nPacket-&amp;gt;NotificationRoutine = DriverNotificationRoutine;
+ 
+    InsertTailList( &amp;amp;IopFsNotifyChangeQueueHead, &amp;amp;nPacket-&amp;gt;ListEntry );
+ 
+    &lt;span style=&#34;color: #008000&#34;&gt;// ...... 无关代码，略&lt;/span&gt;
+}
+&lt;/pre&gt;&lt;/div&gt;
+
+可以看出，顺序是先来后到，也就是先调用IoRegisterFsRegistrationChange的DrvObj被插在链表的前面。而一般来说，先Attach到FSD的Driver，先调用IoRegisterFsRegistrationChange（一般驱动逻辑如此，你要硬写个驱动挂上去后死活非要在10分钟后Register，我这没辙）。&lt;/p&gt;
+
+&lt;p&gt;半路总结下：实际的逻辑和WDK文档上说的不一致。&lt;br /&gt;
+为了再次确认，我再瞅瞅我实际调试的环境（Win 7），wrk毕竟是2003版本的。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;1: kd&amp;gt; x nt!IopFsNotifyChangeQueueHead
+83db4770 nt!IopFsNotifyChangeQueueHead =
+
+1: kd&amp;gt; dt _LIST_ENTRY 83db4770
+ntdll!_LIST_ENTRY
+[ 0x869ae690 - 0x8ab5c3a0 ]
++0×000 Flink : 0x869ae690 _LIST_ENTRY [ 0x8ab5c3a0 - 0x83db4770 ]
++0×004 Blink : 0x8ab5c3a0 _LIST_ENTRY [ 0x83db4770 - 0x869ae690 ]
+
+1: kd&amp;gt; dd 0x869ae690
+869ae690 8ab5c3a0 83db4770 8c8cc648 843e4bda
+869ae6a0 16160803 d8646641 00000000 00000002
+869ae6b0 00000001 00000006 00000010 00000010
+869ae6c0 00000000 00000000 00000000 00002000
+869ae6d0 00002000 00001000 00000001 000003e9
+869ae6e0 00020066 00000008 00000000 00000000
+869ae6f0 00000000 00000000 00000000 00000000
+869ae700 00000000 00000000 00000000 00000000
+
+1: kd&amp;gt; !drvobj 8c8cc648
+Driver object (8c8cc648) is for:
+\FileSystem\FltMgr
+Driver Extension List: (id , addr)
+Device Object list:
+8cb927a0 8cbc0590 8ca85d00 8ca5b948
+8c8f6eb0 8c8ef660 8c8e9318 8c89d630
+8c89b630
+
+1: kd&amp;gt; dd 0x8ab5c3a0
+8ab5c3a0 83db4770 869ae690 870509d0 8b9ea0aa
+8ab5c3b0 06030203 4b466650 8d5f15f8 8bdc3628
+8ab5c3c0 daf5c87b 5112730d 06070203 416d7441
+8ab5c3d0 870e0940 0000002e 8aa87bd0 c0cf00cf
+8ab5c3e0 0c000002 00690046 0065006c 0061004e
+8ab5c3f0 0065006d 0061004d 00570070 877c0000
+8ab5c400 00260207 6e664d46 8ab97ed8 8ab6b5d0
+8ab5c410 00000dac 00000000 8ab5c418 00000000
+
+1: kd&amp;gt; !drvobj 870509d0
+Driver object (870509d0) is for:
+*** ERROR: Module load completed but symbols could not be loaded for FSpy.sys
+\FileSystem\FSpy
+Driver Extension List: (id , addr)
+Device Object list:
+8cc9b900 90c03e68 90c145d8 851d6188
+851e8ca0 8cac0448
+
+1: kd&amp;gt; !devstack 8cb927a0
+!DevObj !DrvObj !DevExt ObjectName
+90c145d8 \FileSystem\FSpy 90c14690
+&amp;gt; 8cb927a0 \FileSystem\FltMgr 8cb92858
+8cc16020 \FileSystem\Ntfs 8cc160d8
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;Win7环境里逻辑跟wrk一致。估计又是WDK文档的BUG，可惜WDK Bug Bash已经结束了，要不可以再弄个U盘玩玩（虽然前两个至今还未收到，悲催的UPS）&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>SEH分析笔记（X86篇）</title>
+      <link>http://boxcounter.com/technique/2011-10-19-SEH-x86/</link>
+      <pubDate>Wed, 19 Oct 2011 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2011-10-19-SEH-x86/</guid>
+      <description>&lt;p&gt;v1.0.2&lt;/p&gt;
+
+&lt;p&gt;2015-07-25，注：因为排版过于复杂繁琐，目前仅提供html文件，请谅解。&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/SEH%E5%88%86%E6%9E%90%E7%AC%94%E8%AE%B0%EF%BC%88x86%E7%AF%87%EF%BC%89_v1.0.2.zip&#34;&gt;SEH分析笔记（x86篇）_v1.0.2.zip&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>驱动中获取进程完整路径名</title>
+      <link>http://boxcounter.com/technique/2009-07-23-%E9%A9%B1%E5%8A%A8%E4%B8%AD%E8%8E%B7%E5%8F%96%E8%BF%9B%E7%A8%8B%E5%AE%8C%E6%95%B4%E8%B7%AF%E5%BE%84%E5%90%8D/</link>
+      <pubDate>Thu, 23 Jul 2009 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2009-07-23-%E9%A9%B1%E5%8A%A8%E4%B8%AD%E8%8E%B7%E5%8F%96%E8%BF%9B%E7%A8%8B%E5%AE%8C%E6%95%B4%E8%B7%AF%E5%BE%84%E5%90%8D/</guid>
+      <description>&lt;p&gt;在OSR上无意中看到一篇文章，关于获取进程完整路径的。贴过来，最后有一点小调整。&lt;/p&gt;
+
+&lt;p&gt;原文地址：&lt;a href=&#34;http://www.osronline.com/article.cfm?id=472&#34;&gt;http://www.osronline.com/article.cfm?id=472&lt;/a&gt;&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;Over the years developers have needed or wanted to know the name of the image executing in a given process. Traditionally, this was often done using PsGetProcessImageFile Name, which returns the contents of a field in the EPROCESS structure used by the Windows OS to maintain per-process state information.
+As we can see from the information in the local debugger session (See Figure 1) the process image file is little more than a field within the EPROCESS structure. Notice that the EPROCESS address is in EBP+8, making it the first - and only - parameter to this function.&lt;/p&gt;
+
+&lt;p&gt;Connected to Windows XP 2600 x86 compatible target, ptr64 FALSE
+Symbol search path is: srv*c:\symbols\websymbols*&lt;a href=&#34;http://msdl.microsoft.com/download/symbols&#34;&gt;http://msdl.microsoft.com/download/symbols&lt;/a&gt;
+Executable search path is:&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;WARNING: Local kernel debugging requires booting with /debug to work optimally.&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;Windows XP Kernel Version 2600 (Service Pack 2) MP (2 procs) Free x86 compatible
+Product: winNt, suite: Terminalserver SingleUserTS
+Built by: 2600.xpsp_sp2_gdr.050301-1519
+Kernel base = 0x804d7000 PsLoadedModuleList = 0x805624a0
+Debug session time: Mon Aug  7 13:29:53.486 2006 (GMT-4)
+System Uptime: 2 days 11:08:38.140
+lkd&amp;gt; .reload
+Connected to Windows XP 2600 x86 compatible target, ptr64 FALSE
+Loading Kernel Symbols
+&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;
+Loading User Symbols
+&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;
+Loading unloaded module list
+&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;&amp;hellip;..*** ERROR: Symbol file could not be found.  Defaulted to export symbols for C
+lkd&amp;gt; u nt!PsGetProcessImageFileName
+Nt!PsGetProcessImageFileName:
+8050a14a  8bff mov edi,edi
+8050a14c  55 push ebp
+8050a14d  8bec mov ebp,esp
+8050a14f  8b4508 mov eax,dword ptr [ebp+8]
+8050a152  0574010000 add eax,174h
+8050a157  5d pop ebp
+8050a158  c20400 ret 4
+8050a15b  8bce mov ecx,esi&lt;/p&gt;
+
+&lt;p&gt;Figure 1 - Local Debug Session of PsGetProcessImageFileName&lt;/p&gt;
+
+&lt;p&gt;Unfortunately, there are some issues with this approach:&lt;/p&gt;
+
+&lt;p&gt;Though well-known, this function is undocumented.
+More seriously, the information contained in this field is severely limited. It contains only the first 16 (ASCII) characters of the image file name.
+It is actually the second issue that often creates problems for programmers because the name of the image file means essentially nothing. For example, we&amp;rsquo;ve seen kernel-mode drivers in the past that validate the name of their service by checking this field. The most egregious case we&amp;rsquo;ve seen is when the service was called svchost.exe, which is a common name that is often spoofed.&lt;/p&gt;
+
+&lt;p&gt;The Proposal
+We suggest a different model for acquiring this information, as shown in Figure 2.&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;gt; &lt;span style=&#34;color: #0000ff&#34;&gt;typedef&lt;/span&gt; NTSTATUS (*QUERY_INFO_PROCESS) (
+&amp;gt;     __in HANDLE ProcessHandle,
+&amp;gt;     __in PROCESSINFOCLASS ProcessInformationClass,
+&amp;gt;     __out_bcount(ProcessInformationLength) PVOID ProcessInformation,
+&amp;gt;     __in ULONG ProcessInformationLength,
+&amp;gt;     __out_opt PULONG ReturnLength
+&amp;gt;     );
+&amp;gt; 
+&amp;gt; QUERY_INFO_PROCESS ZwQueryInformationProcess;
+&amp;gt; 
+&amp;gt; NTSTATUS GetProcessImageName(PUNICODE_STRING ProcessImageName)
+&amp;gt; {
+&amp;gt;     NTSTATUS status;
+&amp;gt;     ULONG returnedLength;
+&amp;gt;     ULONG bufferLength;
+&amp;gt;     PVOID buffer;
+&amp;gt;     PUNICODE_STRING imageName;
+&amp;gt;     
+&amp;gt;     PAGED_CODE(); &lt;span style=&#34;color: #008000&#34;&gt;// this eliminates the possibility of the IDLE Thread/Process&lt;/span&gt;
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL == ZwQueryInformationProcess) {
+&amp;gt; 
+&amp;gt;         UNICODE_STRING routineName;
+&amp;gt; 
+&amp;gt;         RtlInitUnicodeString(&amp;amp;routineName, &lt;span style=&#34;color: #a31515&#34;&gt;L&amp;quot;ZwQueryInformationProcess&amp;quot;&lt;/span&gt;);
+&amp;gt; 
+&amp;gt;         ZwQueryInformationProcess = 
+&amp;gt;                (QUERY_INFO_PROCESS) MmGetSystemRoutineAddress(&amp;amp;routineName);
+&amp;gt; 
+&amp;gt;         &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL == ZwQueryInformationProcess) {
+&amp;gt;             DbgPrint(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;Cannot resolve ZwQueryInformationProcess\n&amp;quot;&lt;/span&gt;);
+&amp;gt;         }
+&amp;gt;     }
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;// Step one - get the size we need&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     status = ZwQueryInformationProcess( NtCurrentProcess(), 
+&amp;gt;                                         ProcessImageFileName,
+&amp;gt;                                         NULL, &lt;span style=&#34;color: #008000&#34;&gt;// buffer&lt;/span&gt;
+&amp;gt;                                         0, &lt;span style=&#34;color: #008000&#34;&gt;// buffer size&lt;/span&gt;
+&amp;gt;                                         &amp;amp;returnedLength);
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (STATUS_INFO_LENGTH_MISMATCH != status) {
+&amp;gt; 
+&amp;gt;         &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; status;
+&amp;gt; 
+&amp;gt;     }
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;// Is the passed-in buffer going to be big enough for us?  &lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;// This function returns a single contguous buffer model...&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     bufferLength = returnedLength - &lt;span style=&#34;color: #0000ff&#34;&gt;sizeof&lt;/span&gt;(UNICODE_STRING);
+&amp;gt;     
+&amp;gt;     &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (ProcessImageName-&amp;gt;MaximumLength &amp;lt; bufferLength) {
+&amp;gt; 
+&amp;gt;         ProcessImageName-&amp;gt;Length = (USHORT) bufferLength;
+&amp;gt; 
+&amp;gt;         &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; STATUS_BUFFER_OVERFLOW;
+&amp;gt;         
+&amp;gt;     }
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;// If we get here, the buffer IS going to be big enough for us, so &lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;// let&amp;#39;s allocate some storage.&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     buffer = ExAllocatePoolWithTag(PagedPool, returnedLength, &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;&amp;#39;&lt;/span&gt;ipgD&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;&amp;#39;&lt;/span&gt;);
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL == buffer) {
+&amp;gt; 
+&amp;gt;         &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; STATUS_INSUFFICIENT_RESOURCES;
+&amp;gt;         
+&amp;gt;     }
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;// Now lets go get the data&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     status = ZwQueryInformationProcess( NtCurrentProcess(), 
+&amp;gt;                                         ProcessImageFileName,
+&amp;gt;                                         buffer,
+&amp;gt;                                         returnedLength,
+&amp;gt;                                         &amp;amp;returnedLength);
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NT_SUCCESS(status)) {
+&amp;gt;         &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;         &lt;span style=&#34;color: #008000&#34;&gt;// Ah, we got what we needed&lt;/span&gt;
+&amp;gt;         &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;         imageName = (PUNICODE_STRING) buffer;
+&amp;gt; 
+&amp;gt;         RtlCopyUnicodeString(ProcessImageName, imageName);
+&amp;gt;         
+&amp;gt;     }
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;// free our buffer&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     ExFreePool(buffer);
+&amp;gt; 
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;// And tell the caller what happened.&lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #008000&#34;&gt;//    &lt;/span&gt;
+&amp;gt;     &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; status;
+&amp;gt;     
+&amp;gt; }
+&amp;gt; 
+&lt;/pre&gt;&lt;/div&gt;
+
+Figure 2 - A New Proposal&lt;/p&gt;
+
+&lt;p&gt;The function itself is fairly straight-forward. It does rely on use of a single undocumented function (ZwQueryInformationProcess), but note that its counterpart (NtQueryInformationProcess) is documented. We need to use the Zw variant in order to use a kernel memory buffer.&lt;/p&gt;
+
+&lt;p&gt;The key element is that Windows has always stored the full path name to the executable image in order to provide this information in the auditing subsystem. This API exploits that existing stored path name.&lt;/p&gt;
+
+&lt;p&gt;Other Process Names
+This function has been implemented to extract the process name for the current process. However, you can use one of the two methods listed below to obtain the process name for a different process:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;If you have a handle for the process, you can use that value instead of the NtCurrentProcess() macro. (Note that in our experience, we usually have a process object and not a process handle - the two are not interchangeable).&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;If you have an EPROCESS address, you can use KeStackAttachProcess/KeUnstackDetachProcess to attach to the process. This technique is rather heavy-weight, so it may be a good idea to cache the information if you need to perform this operation regularly.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;When using the second technique, it is important to note that the name that is returned is a cached name. This cache is not updated if the name of the original file changes after the name is first cached. In other words, if the executable image is renamed, which is typically allowed for a running executable, the name returned will be the name of the original file.&lt;/p&gt;
+
+&lt;p&gt;This issue is not unique. We have also observed that some file systems return the original name even after a rename (e.g., the CIFS client implementation does this on Windows XP). Thus, it may require additional processing such as through a file system filter driver to protect against similar events. For example, you may encounter a security product that relies on knowing the specific name of the image.Alternatives?
+There are other options that a driver could also pursue such as registering for process creation/teardown events (PsSetCreateProcessNotifyRoutine) or image loading (PsSetLoadImageNotifyRoutine).&lt;/p&gt;
+
+&lt;p&gt;PsSetCreateProcessNotifyRoutine has limitations on the number of drivers that can register using this API. Since there is a fixed size table in the Windows OS, it is possible for this call to fail. When this occurs, a driver needs to ensure it can handle such a failure. PsSetLoadImageNotifyRoutine has the same limitation (fixed size table), but is called for all image loads, not just the original process image. Therefore, it includes drivers, DLLs, executables, etc.&lt;/p&gt;
+
+&lt;p&gt;Summary
+The bottom line is that all of these approaches provide a useful name because they include the full path name. This is vastly superior to using the short ASCII eye-catching name that is stored in the EPROCESS structure. A word of caution - if you decide to use the debug level name, use it for nothing more than debugging  since it is not reliable and cannot be relied on for any sort of security check.&lt;/p&gt;
+
+&lt;p&gt;We chose to use the proposed technique because it works in all circumstances and does not rely upon a registration that might potentially fail. In your own driver you might implement both this mechanism and a cache-based mechanism tied to the process creation logic.[/quote]&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;文章里对于如何获取其他进程，提供了两种方法，但是都不太方便，在我的驱动里，我是在PsSetCreateProcessNotifyRoutine的回调函数里获取进程路径，能得到的进程信息是PID，于是动手改了下上面的代码，如下：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;NTSTATUS
+    GetProcessImagePath(
+        IN  HANDLE   hProcessId,
+        OUT PUNICODE_STRING ProcessImagePath
+    )
+{
+    NTSTATUS Status = STATUS_UNSUCCESSFUL;
+    HANDLE hProcess = NULL;
+    PEPROCESS pEprocess = NULL;
+    ULONG returnedLength = 0;
+    ULONG bufferLength = 0;
+    PVOID buffer = NULL;
+    PUNICODE_STRING imageName = NULL;
+    &lt;span style=&#34;color: #0000ff&#34;&gt;static&lt;/span&gt; QUERY_INFO_PROCESS ZwQueryInformationProcess = NULL;
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//PAGED_CODE; // this eliminates the possibility of the IDLE Thread/Process&lt;/span&gt;
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL == ZwQueryInformationProcess)
+    {
+        UNICODE_STRING routineName;
+
+        RtlInitUnicodeString(&amp;amp;routineName, &lt;span style=&#34;color: #a31515&#34;&gt;L&amp;quot;ZwQueryInformationProcess&amp;quot;&lt;/span&gt;);
+
+        ZwQueryInformationProcess =
+               (QUERY_INFO_PROCESS) MmGetSystemRoutineAddress(&amp;amp;routineName);
+
+        &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL == ZwQueryInformationProcess) {
+            KdPrint((&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;[%s?] %4u %s: Cannot get &amp;#39;ZwQueryInformationProcess&amp;#39;.\n&amp;quot;&lt;/span&gt;, CODE_ID));
+            &lt;span style=&#34;color: #0000ff&#34;&gt;goto&lt;/span&gt; __FINALLY;
+        }
+    }
+
+    Status = PsLookupProcessByProcessId(hProcessId, &amp;amp;pEprocess);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (!NT_SUCCESS(Status))
+    {
+        KdPrint((&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;[%s?] %4u %s: PsLookupProcessByProcessId failed(%s).\n&amp;quot;&lt;/span&gt;,
+                CODE_ID, StatusStr(Status)));
+        &lt;span style=&#34;color: #0000ff&#34;&gt;goto&lt;/span&gt; __FINALLY;
+    }
+
+    Status = ObOpenObjectByPointer(pEprocess,           &lt;span style=&#34;color: #008000&#34;&gt;// Object&lt;/span&gt;
+                                   OBJ_KERNEL_HANDLE,   &lt;span style=&#34;color: #008000&#34;&gt;//HandleAttributes&lt;/span&gt;
+                                   NULL,                &lt;span style=&#34;color: #008000&#34;&gt;// PassedAccessState OPTIONAL&lt;/span&gt;
+                                   GENERIC_READ,        &lt;span style=&#34;color: #008000&#34;&gt;// DesiredAccess&lt;/span&gt;
+                                   *PsProcessType,      &lt;span style=&#34;color: #008000&#34;&gt;// ObjectType&lt;/span&gt;
+                                   KernelMode,          &lt;span style=&#34;color: #008000&#34;&gt;// AccessMode&lt;/span&gt;
+                                   &amp;amp;hProcess);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (!NT_SUCCESS(Status))
+    {
+        KdPrint((&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;[%s?] %4u %s: ObOpenObjectByPointer failed(%s).\n&amp;quot;&lt;/span&gt;,
+                CODE_ID, StatusStr(Status)));
+        &lt;span style=&#34;color: #0000ff&#34;&gt;goto&lt;/span&gt; __FINALLY;
+    }
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// Step one - get the size we need&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    Status = ZwQueryInformationProcess( hProcess,
+                                        ProcessImageFileName,
+                                        NULL, &lt;span style=&#34;color: #008000&#34;&gt;// buffer&lt;/span&gt;
+                                        0, &lt;span style=&#34;color: #008000&#34;&gt;// buffer size&lt;/span&gt;
+                                        &amp;amp;returnedLength);
+
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (STATUS_INFO_LENGTH_MISMATCH != Status)
+    {
+        KdPrint((&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;[%s?] %4u %s: ZwQueryInformationProcess@1 failed(%s).\n&amp;quot;&lt;/span&gt;,
+                CODE_ID, StatusStr(Status)));
+        &lt;span style=&#34;color: #0000ff&#34;&gt;goto&lt;/span&gt; __FINALLY;
+    }
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// Is the passed-in buffer going to be big enough for us?&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// This function returns a single contguous buffer model...&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    bufferLength = returnedLength - &lt;span style=&#34;color: #0000ff&#34;&gt;sizeof&lt;/span&gt;(UNICODE_STRING);
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (ProcessImagePath-&amp;gt;MaximumLength &amp;lt; bufferLength)
+    {
+        ProcessImagePath-&amp;gt;Length = (USHORT) bufferLength;
+&lt;span style=&#34;color: #008000&#34;&gt;//        KdPrint((&amp;quot;[%s] %4u %s: STATUS_BUFFER_OVERFLOW \n&amp;quot;, CODE_ID));&lt;/span&gt;
+        Status = STATUS_BUFFER_OVERFLOW;
+        &lt;span style=&#34;color: #0000ff&#34;&gt;goto&lt;/span&gt; __FINALLY;
+    }
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// If we get here, the buffer IS going to be big enough for us, so&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// let&amp;#39;s allocate some storage.&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    buffer = ExAllocatePoolWithTag(PagedPool, returnedLength, &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;&amp;#39;&lt;/span&gt;ipgD&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;&amp;#39;&lt;/span&gt;);
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL == buffer)
+    {
+        KdPrint((&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;[%s?] %4u %s: STATUS_INSUFFICIENT_RESOURCES\n&amp;quot;&lt;/span&gt;, CODE_ID));
+        Status = STATUS_INSUFFICIENT_RESOURCES;
+        &lt;span style=&#34;color: #0000ff&#34;&gt;goto&lt;/span&gt; __FINALLY;
+    }
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// Now lets go get the data&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    Status = ZwQueryInformationProcess( hProcess,
+                                        ProcessImageFileName,
+                                        buffer,
+                                        returnedLength,
+                                        &amp;amp;returnedLength);
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NT_SUCCESS(Status)) {
+        &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;// Ah, we got what we needed&lt;/span&gt;
+        &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+        imageName = (PUNICODE_STRING) buffer;
+
+        RtlCopyUnicodeString(ProcessImagePath, imageName);
+
+    }
+    &lt;span style=&#34;color: #0000ff&#34;&gt;else&lt;/span&gt;
+    {
+        KdPrint((&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;[%s?] %4u %s: ZwQueryInformationProcess@1 failed(%s).\n&amp;quot;&lt;/span&gt;,
+                CODE_ID, StatusStr(Status)));
+    }
+
+__FINALLY:
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL != pEprocess)
+    {
+        ObDereferenceObject(pEprocess);
+    }
+
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL != hProcess)
+    {
+        ZwClose(hProcess);
+    }
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// free our buffer&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #0000ff&#34;&gt;if&lt;/span&gt; (NULL != buffer)
+    {
+        ExFreePool(buffer);
+    }
+
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;// And tell the caller what happened.&lt;/span&gt;
+    &lt;span style=&#34;color: #008000&#34;&gt;//&lt;/span&gt;
+    &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; Status;
+}
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;更新历史：
+2012-4-5，修正错误结束分支中的资源泄漏bug&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>关于将本层的IO_STACK_LOCATION拷贝到下一层的两种方法</title>
+      <link>http://boxcounter.com/technique/2007-12-10-%E5%85%B3%E4%BA%8E%E5%B0%86%E6%9C%AC%E5%B1%82%E7%9A%84IO_STACK_LOCATION%E6%8B%B7%E8%B4%9D%E5%88%B0%E4%B8%8B%E4%B8%80%E5%B1%82%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E6%B3%95/</link>
+      <pubDate>Mon, 10 Dec 2007 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2007-12-10-%E5%85%B3%E4%BA%8E%E5%B0%86%E6%9C%AC%E5%B1%82%E7%9A%84IO_STACK_LOCATION%E6%8B%B7%E8%B4%9D%E5%88%B0%E4%B8%8B%E4%B8%80%E5%B1%82%E7%9A%84%E4%B8%A4%E7%A7%8D%E6%96%B9%E6%B3%95/</guid>
+      <description>&lt;p&gt;两种方法：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;调用MS提供的标准方法IoCopyCurrentIrpStackLocationToNext(&amp;hellip;)&lt;/li&gt;
+&lt;li&gt;方法二：
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;PIO_STACK_LOCATION IrpSp;   
+PIO_STACK_LOCATION NextIrpSp;   
+  
+IrpSp = IoGetCurrentIrpStackLocation(Irp);   
+NextIrpSp = IoGetNextIrpStackLocation(Irp);   
+  
+*NextIrpSp = *IrpSp;   
+  
+&lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; IoCallDriver(NextDeviceObject, Irp);
+&lt;/pre&gt;&lt;/div&gt;
+&lt;br /&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;两种方法都挺常用。但是今天再看DDK中一篇OSR的分析文章里提到一个采用方法二可能会导致的一个很隐蔽的BUG：&lt;/p&gt;
+
+&lt;p&gt;方法二把本层（La）的整个IO_STACK_LOCATION都拷贝到了下一层(Lb)，而IO_STACK_LOCATION中有两个成员CompletionRoutine、Context，即完成例程和完成例程的上下文参数。也就是说方法二会让Lb层拥有这两个原本不一定会属于它的成员。如果这两个成员都是NULL，那还好。一旦这两个成员有有效的内容，那么就会导致&amp;rdquo;an eventual blue screen&amp;rdquo;。&lt;/p&gt;
+
+&lt;p&gt;再反观方法一IoCopyCurrentIrpStackLocationToNext(&amp;hellip;)，在Ntddk.h有，有这个“函数”的定义：&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;#define IoCopyCurrentIrpStackLocationToNext( Irp ) { \   &lt;/span&gt;
+PIO_STACK_LOCATION __irpSp;        &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;\&lt;/span&gt;   
+PIO_STACK_LOCATION __nextIrpSp;    &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;\&lt;/span&gt;   
+__irpSp = IoGetCurrentIrpStackLocation( (Irp) );     &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;\&lt;/span&gt;   
+__nextIrpSp = IoGetNextIrpStackLocation( (Irp) );    &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;\&lt;/span&gt;   
+RtlCopyMemory(__nextIrpSp, __irpSp, FIELD_OFFSET(IO_STACK_LOCATION, CompletionRoutine)); &lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;\&lt;/span&gt;     
+__nextIrpSp-&amp;gt;Control = 0; }
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;原来这是个宏，重点看RtlCopyMemory调用的最后一个参数：这个宏只拷贝了CompletionRoutine成员之前的部分。方法一、方法二的区别就在这里。而实际上后者相对于前者，并没有什么优点，所以还是尽量使用方法一比较好。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>对&#39;CDO&#39;和&#39;FiDO&#39;的理解</title>
+      <link>http://boxcounter.com/technique/2007-12-08-%E5%AF%B9%27CDO%27%E5%92%8C%27FiDO%27%E7%9A%84%E7%90%86%E8%A7%A3/</link>
+      <pubDate>Sat, 08 Dec 2007 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2007-12-08-%E5%AF%B9%27CDO%27%E5%92%8C%27FiDO%27%E7%9A%84%E7%90%86%E8%A7%A3/</guid>
+      <description>&lt;p&gt;下面是我对于CDO、FiDO的理解，不一定正确，但是还是记录下来，以后学习清楚来再来修正。&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&amp;lsquo;CDO&amp;rsquo;是提供给R3级进程和其它驱动程序的，可以理解为它是我们过滤驱动程序的外交官。负责接收来自R3进程和其它驱动的IO请求（&amp;rsquo;CDO&amp;rsquo;仅仅只负责接收，处理过程由&amp;rsquo;FiDO&amp;rsquo;完成）。&lt;/li&gt;
+&lt;li&gt;&amp;lsquo;FiDO&amp;rsquo;提供真正Irp、FastIO处理函数，是我们的过滤驱动程序的功能核心。&lt;/li&gt;
+&lt;li&gt;&amp;lsquo;CDO&amp;rsquo;不需要挂载到别的驱动上。而&amp;rsquo;FiDO&amp;rsquo;则根据需要挂载到目标对象上。&lt;/li&gt;
+&lt;li&gt;一个过滤驱动程序的&amp;rsquo;CDO&amp;rsquo;最多只可以有1个，&amp;rsquo;FiDO&amp;rsquo;可以有多个。&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

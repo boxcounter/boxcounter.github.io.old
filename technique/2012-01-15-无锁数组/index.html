@@ -28,6 +28,8 @@
               
                 <li><a href="/essay">essay</a></li>
               
+                <li><a href="/reading_notes">reading_notes</a></li>
+              
                 <li><a href="/technique">technique</a></li>
               
               </ul>
@@ -42,11 +44,14 @@
         <h1><a href="http://boxcounter.com/technique/2012-01-15-%E6%97%A0%E9%94%81%E6%95%B0%E7%BB%84/">无锁数组</a></h1>
         <hr />
         <span class="post-time">2012-01-15</span>
+
+        
+
         <div class="post">
             <p>项目里有一个地方可能要去掉用于链表的锁，但是又得保证读写互斥。于是琢磨了一个土办法：
 （琢磨时的目标是用于异步发送日志，即多个日志存储者，一个发送者，接收者在另一个进程不用管它）</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span style="color: #0000ff">#define N 200</span>
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span><span style="color: #0000ff">#define N 200</span>
 PVOID g_Buffer[N] = {0};
 UINT  g_uSaveIndex = 0;
 
@@ -99,7 +104,7 @@ VOID
     <span style="color: #0000ff">return</span>;
 }
 </pre></div>
-</p>
+
 
         </div>
 

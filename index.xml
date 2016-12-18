@@ -2,24 +2,173 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Boxcounter的烂笔头</title>
-    <link>http://boxcounter.com/</link>
+    <link>http://boxcounter.com/index.xml</link>
     <description>Recent content on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sat, 04 Jun 2016 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 26 Nov 2016 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://boxcounter.com/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
-      <title>书单</title>
-      <link>http://boxcounter.com/essay/2016-04-16-%E4%B9%A6%E5%8D%95/</link>
-      <pubDate>Sat, 04 Jun 2016 00:00:00 +0000</pubDate>
+      <title>Host key verification failed的另类触发</title>
+      <link>http://boxcounter.com/technique/2016-11-26-Host-key-verification-failed/</link>
+      <pubDate>Sat, 26 Nov 2016 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/essay/2016-04-16-%E4%B9%A6%E5%8D%95/</guid>
+      <guid>http://boxcounter.com/technique/2016-11-26-Host-key-verification-failed/</guid>
       <description>
 
-&lt;p&gt;记录我读完的书，从2014年开始记录，每月起始更新上月读的书。主要记录有点厚度的，薄手册和零散资料不记。&lt;/p&gt;
+&lt;p&gt;最近几天在编写、测试部署脚本，准备配合Jenkins进行自动化的持续集成，因此需要全程静默执行，未想触发了一个SSH key问题，卡了我好几个小时……&lt;/p&gt;
 
-&lt;h3 id=&#34;分类:1e8b7b8c3446dda946ced66bc8617566&#34;&gt;分类&lt;/h3&gt;
+&lt;h1 id=&#34;问题现象&#34;&gt;问题现象&lt;/h1&gt;
+
+&lt;p&gt;从GitHub上clone过仓库的码农们都知道，用SSH比HTTPs更可靠。但SSH初次连接服务器时，通常会询问是否接受连接，比如这样：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;The authenticity of host &amp;lsquo;github.com (192.30.252.1)&amp;rsquo; can&amp;rsquo;t be established.&lt;br /&gt;
+RSA key fingerprint is 16:27:ac:a5:76:28:2d:36:63:1b:56:4d:eb:df:a6:48.&lt;br /&gt;
+Are you sure you want to continue connecting (yes/no)?&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;通常大家手输yes就可以继续clone代码了。而静默执行的脚本通常会在建立连接之前将目标站点保存到&lt;code&gt;known_hosts&lt;/code&gt;，以跳过询问。&lt;/p&gt;
+
+&lt;p&gt;在我的脚本里是这样的：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;ssh_dir=&amp;quot;${HOME}/.ssh&amp;quot;
+...
+ssh-keyscan -v -t rsa ssh.github.com &amp;gt; ${ssh_dir}/known_hosts
+git clone git@github.com:...
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;但诡异的是在Jenkins部署过程中并没有生效，还是在建立SSH连接时卡住然后报错「Host key verification failed」。如果打开pty选项，则会如前面那样询问是否接受连接。而在我的本地虚拟机中则完全正常、全程安静地我都不好意思。&lt;/p&gt;
+
+&lt;h1 id=&#34;初步尝试&#34;&gt;初步尝试&lt;/h1&gt;
+
+&lt;p&gt;有怀疑过：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;是不是SSH目录或其中文件的权限设置不对，导致SSH无法读取？&lt;/li&gt;
+&lt;li&gt;是不是known_hosts没有生效？格式不对？&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;搜遍资料、试遍方法，几个小时过去了，依然没有进展。眼瞅着就没法轻松过周末了……&lt;/p&gt;
+
+&lt;h1 id=&#34;新思路&#34;&gt;新思路&lt;/h1&gt;
+
+&lt;p&gt;于是换了个思路，跳过Jenkins、直接SSH到被部署服务器上，手动执行脚本：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;chmod u+x ./init.sh
+sudo ./init.sh
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;又看到了熟悉的询问，悬着手腕琢磨接下来该怎么办，转念一想「要不yes了看看它自己能不能保存到known_hosts、保存的格式是怎样的」。动手之前先&lt;code&gt;mv known_hosts known_hosts.old&lt;/code&gt;待会好diff。&lt;/p&gt;
+
+&lt;h1 id=&#34;峰回路转&#34;&gt;峰回路转&lt;/h1&gt;
+
+&lt;p&gt;输入yes，峰回路转 —— 并没有生成known_host。&lt;/p&gt;
+
+&lt;p&gt;又陷入思考「难道权限不够？不对啊，我已经sudo了」，一想到sudo，顿时一个激灵 —— 当前是root帐号！赶紧&lt;code&gt;sudo ls -la /root/.ssh/&lt;/code&gt;，果然躺着一个known_hosts文件。&lt;/p&gt;
+
+&lt;p&gt;到此，我才弄明白问题的原因：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;因为sudo，脚本是以root帐号身份执行，会去&lt;code&gt;/root/.ssh/known_hosts&lt;/code&gt;找known_hosts；&lt;/li&gt;
+&lt;li&gt;脚本的ssh-keyscan将ssh.github.com保存进了&lt;code&gt;~/.ssh/known_hosts&lt;/code&gt;，被部署服务器使用的是非root帐号；&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;SSH就没找到ssh-keyscan的结果，所以询问。而之所以在本地虚拟机里一切正常是因为我偷懒用的是root帐号。&lt;/p&gt;
+
+&lt;p&gt;再一细想，我真是糊涂，怎么会整个脚本都sudo呢，这样岂不是git clone等等命令都是以root用户身份执行了吗……&lt;/p&gt;
+
+&lt;h1 id=&#34;解决&#34;&gt;解决&lt;/h1&gt;
+
+&lt;p&gt;找到了问题症结，解决也就简单了，花了十分钟把需要权限的命令都加上sudo，&lt;code&gt;echo xxx &amp;gt; $file&lt;/code&gt;都改成&lt;code&gt;echo xxx | sudo tee $file&lt;/code&gt;，去掉Jenkins构建步骤里的sudo 。&lt;/p&gt;
+
+&lt;p&gt;Jenkins部署成功，欢度周末～&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>macOS tar的特殊行为</title>
+      <link>http://boxcounter.com/technique/2016-11-26-macOS%20tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</link>
+      <pubDate>Sat, 26 Nov 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2016-11-26-macOS%20tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</guid>
+      <description>&lt;p&gt;这周在编写自动部署脚本的过程遇到一个有趣的问题 —— 我把脚本打包成tgz文件，然后scp到被部署服务器上。解压之后发现多出来好些隐藏文件。比如下面的行1和行3：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ls ./init/letsencrypt/keys/
+._0000_key-certbot.pem
+0000_key-certbot.pem
+._0000_key-letsencrypt.pem
+0000_key-letsencrypt.pem
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;一开始我以为是系统自动生成的类似.DS_Store这样的系统文件，但&lt;code&gt;ls -al&lt;/code&gt;看了下源目录，并没有发现踪迹。然后在本机（macOS）上把tgz文件&lt;code&gt;tar zxvf&lt;/code&gt;出来，也没有发现这些文件的存在。&lt;/p&gt;
+
+&lt;p&gt;一头雾水。于是google「tar dot file」，找到了答案：&lt;/p&gt;
+
+&lt;p&gt;macOS自带的tar在打包过程中创建了这些隐藏文件，用于保存被打包文件的扩展属性，解包时会用隐藏文件中的数据重建扩展属性。ubuntu下的tar则不具备这个特性，会将隐藏文件原样解包出来。&lt;/p&gt;
+
+&lt;p&gt;可以通过&lt;code&gt;ls -le@ *&lt;/code&gt;来查看扩展属性：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ /bin/ls -le@ ./init/letsencrypt/keys/
+total 56
+-rw-------@ 1 Boxcounter  staff  1708 Nov 16 12:26 0000_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0000_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0001_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0001_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0002_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0002_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0003_key-letsencrypt.pem
+	com.apple.quarantine	  17
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;解决方法有两种：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;设置环境变量COPYFILE_DISABLE禁用tar的这个行为：&lt;code&gt;export COPYFILE_DISABLE=1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;改用gnu tar：&lt;code&gt;brew install gnu-tar --with-default-names&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;参考资料：&lt;a href=&#34;http://superuser.com/a/61188&#34;&gt;Why do I get files like ._foo in my tarball on OS X?&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>《经济学原理：宏观经济学》读书笔记</title>
+      <link>http://boxcounter.com/reading_notes/2016-10-26-%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%8E%9F%E7%90%86%EF%BC%9A%E5%AE%8F%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
+      <pubDate>Wed, 26 Oct 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/reading_notes/2016-10-26-%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%8E%9F%E7%90%86%EF%BC%9A%E5%AE%8F%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
+      <description>&lt;p&gt;下图是缩略版本，文末有清晰源图的链接。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2016-10-26/经济学原理：宏观经济学.png&#34;/&gt;&lt;/p&gt;
+
+&lt;hr /&gt;
+
+&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2016-10-26/%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8e%9f%e7%90%86%ef%bc%9a%e5%ae%8f%e8%a7%82%e7%bb%8f%e6%b5%8e%e5%ad%a6.mindnode.zip&#34;&gt;经济学原理：宏观经济学.mindnode&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;源图：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2016-10-26/%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8e%9f%e7%90%86%ef%bc%9a%e5%ae%8f%e8%a7%82%e7%bb%8f%e6%b5%8e%e5%ad%a6.png.zip&#34;&gt;经济学原理：宏观经济学.png&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>读书记录</title>
+      <link>http://boxcounter.com/reading_notes/2016-04-16-%E8%AF%BB%E4%B9%A6%E8%AE%B0%E5%BD%95/</link>
+      <pubDate>Wed, 26 Oct 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/reading_notes/2016-04-16-%E8%AF%BB%E4%B9%A6%E8%AE%B0%E5%BD%95/</guid>
+      <description>
+
+&lt;p&gt;记录我读完的书，从2014年开始记录。主要记录有点厚度的，薄手册和零散资料不记。&lt;/p&gt;
+
+&lt;h1 id=&#34;分类&#34;&gt;分类&lt;/h1&gt;
 
 &lt;table&gt;
 &lt;thead&gt;
@@ -44,14 +193,14 @@
 &lt;/tr&gt;
 
 &lt;tr&gt;
-&lt;td&gt;5~6&lt;/td&gt;
+&lt;td&gt;6&lt;/td&gt;
 &lt;td&gt;读完有点收获，应该不会再读&lt;/td&gt;
 &lt;td&gt;&lt;/td&gt;
 &lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;h3 id=&#34;2016年:1e8b7b8c3446dda946ced66bc8617566&#34;&gt;2016年&lt;/h3&gt;
+&lt;h1 id=&#34;2016年&#34;&gt;2016年&lt;/h1&gt;
 
 &lt;table&gt;
 &lt;thead&gt;
@@ -245,38 +394,100 @@
 &lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
 &lt;td&gt;&lt;a href=&#34;http://boxcounter.com/essay/2016-06-04-%e9%80%bb%e8%be%91%e6%80%9d%e7%bb%b4%ef%bc%8c%e5%8f%aa%e8%a6%81%e4%ba%94%e6%ad%a5/&#34;&gt;笔记&lt;/a&gt;&lt;/td&gt;
 &lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;21&lt;/td&gt;
+&lt;td&gt;《Redis实战》&lt;/td&gt;
+&lt;td&gt;Josiah L. Carlson/黄健宏&lt;/td&gt;
+&lt;td&gt;08-03&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;22&lt;/td&gt;
+&lt;td&gt;《暗时间》&lt;/td&gt;
+&lt;td&gt;刘未鹏&lt;/td&gt;
+&lt;td&gt;08-20&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;23&lt;/td&gt;
+&lt;td&gt;《我想重新解释历史》&lt;/td&gt;
+&lt;td&gt;吴思&lt;/td&gt;
+&lt;td&gt;08-21&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;24&lt;/td&gt;
+&lt;td&gt;《设计原本》&lt;/td&gt;
+&lt;td&gt;Frederick P. Brooks/高博、朱磊、王海鹏&lt;/td&gt;
+&lt;td&gt;09-04&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;25&lt;/td&gt;
+&lt;td&gt;《乌合之众》&lt;/td&gt;
+&lt;td&gt;Gustave Le Bon/冯克利&lt;/td&gt;
+&lt;td&gt;10-05&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;26&lt;/td&gt;
+&lt;td&gt;《构建高性能Web站点》&lt;/td&gt;
+&lt;td&gt;郭欣&lt;/td&gt;
+&lt;td&gt;10-11&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;27&lt;/td&gt;
+&lt;td&gt;《The Logstash Book v2.3.2》&lt;/td&gt;
+&lt;td&gt;James Turnbull&lt;/td&gt;
+&lt;td&gt;10-12&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;28&lt;/td&gt;
+&lt;td&gt;《大型网站技术架构》&lt;/td&gt;
+&lt;td&gt;李智慧&lt;/td&gt;
+&lt;td&gt;10-21&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;29&lt;/td&gt;
+&lt;td&gt;《经济学原理：宏观经济学》&lt;/td&gt;
+&lt;td&gt;N.Gregory Mankiw&lt;/td&gt;
+&lt;td&gt;10-26&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
+&lt;td&gt;&lt;a href=&#34;http://boxcounter.com/reading_notes/2016-10-26-%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8e%9f%e7%90%86%ef%bc%9a%e5%ae%8f%e8%a7%82%e7%bb%8f%e6%b5%8e%e5%ad%a6/&#34;&gt;笔记&lt;/a&gt;&lt;/td&gt;
+&lt;/tr&gt;
+
+&lt;tr&gt;
+&lt;td&gt;30&lt;/td&gt;
+&lt;td&gt;《品人录》&lt;/td&gt;
+&lt;td&gt;易中天&lt;/td&gt;
+&lt;td&gt;12-08&lt;/td&gt;
+&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
+&lt;td&gt;&lt;/td&gt;
+&lt;/tr&gt;
 &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;!-- 陈志武《金融的逻辑》 --&gt;
-
-&lt;!-- 茅于轼《生活中的经济学》 --&gt;
-
-&lt;!-- 许小年《从来就没有救世主》 --&gt;
-
-&lt;!-- 薛兆丰《经济学通识》 --&gt;
-
-&lt;!-- 索维尔《诡辩与真相——经济学入门》 --&gt;
-
-&lt;!-- 贝克尔《生活中的经济学》 --&gt;
-
-&lt;!-- 弗里德曼《资本主义与自由》 --&gt;
-
-&lt;!-- 系统的： --&gt;
-
-&lt;!-- 穆雷·N. 罗斯巴德《人、经济与国家》 --&gt;
-
-&lt;!-- 茅于轼和岑科合著的《人文经济学》 --&gt;
-
-&lt;!-- 张五常的《经济解释》 --&gt;
-
-&lt;!-- 保罗·海恩等人著的《经济学的思维方式》 --&gt;
-
-&lt;!-- 米塞斯的《人的行动》 --&gt;
-
-&lt;!-- https://mp.weixin.qq.com/s?__biz=MjM5NjQ3MDMxMA==&amp;mid=217884728&amp;idx=3&amp;sn=fc915e09648c48e5d81e4cf3358a0ee2&amp;key=af154fdc40fed003c8a2d3d70a5d4cc787e6c79bb83dc3f8c15b882ae7ff4bcd5aa5192904537e33e0b97e4a4d33ad06&amp;ascene=1&amp;uin=NjQ4OTk1NTQy&amp;devicetype=iPhone+OS8.3&amp;version=16020211&amp;nettype=WIFI&amp;fontScale=109&amp;pass_ticket=OnHOxL02jchDp082n6Y3fvFh8AE3PugSmpcuxtd3exPO2C%2F5xaRWrihNM3tYEQFX --&gt;
-
-&lt;h3 id=&#34;2015年:1e8b7b8c3446dda946ced66bc8617566&#34;&gt;2015年&lt;/h3&gt;
+&lt;h1 id=&#34;2015年&#34;&gt;2015年&lt;/h1&gt;
 
 &lt;table&gt;
 &lt;thead&gt;
@@ -653,7 +864,7 @@
 &lt;/tbody&gt;
 &lt;/table&gt;
 
-&lt;h3 id=&#34;2014年:1e8b7b8c3446dda946ced66bc8617566&#34;&gt;2014年&lt;/h3&gt;
+&lt;h1 id=&#34;2014年&#34;&gt;2014年&lt;/h1&gt;
 
 &lt;table&gt;
 &lt;thead&gt;
@@ -958,7 +1169,7 @@
 
 &lt;tr&gt;
 &lt;td&gt;33&lt;/td&gt;
-&lt;td&gt;《敏捷软件开发——原则、模式与实践作者》&lt;/td&gt;
+&lt;td&gt;《敏捷软件开发——原则、模式与实践》&lt;/td&gt;
 &lt;td&gt;Robert C·Martin&lt;/td&gt;
 &lt;td&gt;09-21&lt;/td&gt;
 &lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
@@ -1007,10 +1218,10 @@
     
     <item>
       <title>《逻辑思维，只要五步》读书笔记</title>
-      <link>http://boxcounter.com/essay/2016-06-04-%E9%80%BB%E8%BE%91%E6%80%9D%E7%BB%B4%EF%BC%8C%E5%8F%AA%E8%A6%81%E4%BA%94%E6%AD%A5/</link>
+      <link>http://boxcounter.com/reading_notes/2016-06-04-%E9%80%BB%E8%BE%91%E6%80%9D%E7%BB%B4%EF%BC%8C%E5%8F%AA%E8%A6%81%E4%BA%94%E6%AD%A5/</link>
       <pubDate>Sat, 04 Jun 2016 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/essay/2016-06-04-%E9%80%BB%E8%BE%91%E6%80%9D%E7%BB%B4%EF%BC%8C%E5%8F%AA%E8%A6%81%E4%BA%94%E6%AD%A5/</guid>
+      <guid>http://boxcounter.com/reading_notes/2016-06-04-%E9%80%BB%E8%BE%91%E6%80%9D%E7%BB%B4%EF%BC%8C%E5%8F%AA%E8%A6%81%E4%BA%94%E6%AD%A5/</guid>
       <description>&lt;p&gt;这本书于我而言，乏善可陈。原本30页能说清楚的方法论，絮絮叨叨成了230页的册子。
 勉强凑出这么一篇读书笔记。&lt;/p&gt;
 
@@ -1024,24 +1235,28 @@
     
     <item>
       <title>《经济学原理：微观经济学》读书笔记</title>
-      <link>http://boxcounter.com/essay/2016-04-16-%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%8E%9F%E7%90%86%EF%BC%9A%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
+      <link>http://boxcounter.com/reading_notes/2016-04-16-%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%8E%9F%E7%90%86%EF%BC%9A%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
       <pubDate>Sat, 16 Apr 2016 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/essay/2016-04-16-%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%8E%9F%E7%90%86%EF%BC%9A%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
-      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2016-04-16/经济学原理：微观经济学.png&#34;/&gt;&lt;/p&gt;
+      <guid>http://boxcounter.com/reading_notes/2016-04-16-%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%8E%9F%E7%90%86%EF%BC%9A%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
+      <description>&lt;p&gt;下图是缩略版本，文末有清晰源图的链接。&lt;/p&gt;
+
+&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2016-04-16/经济学原理：微观经济学.png&#34;/&gt;&lt;/p&gt;
 
 &lt;hr /&gt;
 
 &lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2016-04-16/%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8e%9f%e7%90%86%ef%bc%9a%e5%be%ae%e8%a7%82%e7%bb%8f%e6%b5%8e%e5%ad%a6.mindnode.zip&#34;&gt;经济学原理：微观经济学.mindnode&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;源图：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2016-04-16/%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8e%9f%e7%90%86%ef%bc%9a%e5%be%ae%e8%a7%82%e7%bb%8f%e6%b5%8e%e5%ad%a6.png.zip&#34;&gt;经济学原理：微观经济学.png&lt;/a&gt;&lt;/p&gt;
 </description>
     </item>
     
     <item>
       <title>《一本书读懂中国税》读书笔记</title>
-      <link>http://boxcounter.com/essay/2016-02-23-%E4%B8%80%E6%9C%AC%E4%B9%A6%E8%AF%BB%E6%87%82%E4%B8%AD%E5%9B%BD%E7%A8%8E/</link>
+      <link>http://boxcounter.com/reading_notes/2016-02-23-%E4%B8%80%E6%9C%AC%E4%B9%A6%E8%AF%BB%E6%87%82%E4%B8%AD%E5%9B%BD%E7%A8%8E/</link>
       <pubDate>Tue, 23 Feb 2016 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/essay/2016-02-23-%E4%B8%80%E6%9C%AC%E4%B9%A6%E8%AF%BB%E6%87%82%E4%B8%AD%E5%9B%BD%E7%A8%8E/</guid>
+      <guid>http://boxcounter.com/reading_notes/2016-02-23-%E4%B8%80%E6%9C%AC%E4%B9%A6%E8%AF%BB%E6%87%82%E4%B8%AD%E5%9B%BD%E7%A8%8E/</guid>
       <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2016-02-23/一本书读懂中国税.png&#34;/&gt;&lt;/p&gt;
 
 &lt;hr /&gt;
@@ -1052,10 +1267,10 @@
     
     <item>
       <title>《真实世界的经济学》读书笔记</title>
-      <link>http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
+      <link>http://boxcounter.com/reading_notes/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
       <pubDate>Wed, 09 Sep 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
+      <guid>http://boxcounter.com/reading_notes/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
       <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-09-09/真实世界的经济学.png&#34;/&gt;&lt;/p&gt;
 
 &lt;hr /&gt;
@@ -1066,13 +1281,13 @@
     
     <item>
       <title>RefBase::weakref_type::attemptIncStrong的理解</title>
-      <link>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</link>
+      <link>http://boxcounter.com/technique/2015-09-05-weakref_type/</link>
       <pubDate>Sat, 05 Sep 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</guid>
+      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type/</guid>
       <description>&lt;p&gt;见中文注释内容：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)
 {
     incWeak(id);
     
@@ -1144,9 +1359,9 @@
     &lt;span style=&#34;color: #0000ff&#34;&gt;return&lt;/span&gt; true;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; RefBase::decStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id) &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; RefBase::decStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id) &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt;
 {
     weakref_impl* &lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; refs = mRefs;
     refs-&amp;gt;removeStrongRef(id);
@@ -1194,7 +1409,7 @@
 
 &lt;p&gt;其中两个灰色方块是使用代码动态创建的TextView。它们的父LinearLayout是这样的：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;lt;LinearLayout
     android:id=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;@+id/ll_files&amp;quot;&lt;/span&gt;
     android:layout_width=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;wrap_content&amp;quot;&lt;/span&gt;
     android:layout_height=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;100dp&amp;quot;&lt;/span&gt;
@@ -1202,7 +1417,7 @@
     android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt;
     /&amp;gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;不知道是什么原因，导致第一个TextView「下挫」了一些。仔细检查了它的margin和padding都是0、符合预期，但top是29。&lt;/p&gt;
 
@@ -1210,7 +1425,7 @@
 
 &lt;p&gt;顺着LinearLayout.onLayout()追踪到了LinearLayout.layoutHorizontal()，发现了这样一段代码：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; layoutHorizontal(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; left, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; top, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; right, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; bottom) {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; layoutHorizontal(&lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; left, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; top, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; right, &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; bottom) {
     &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
     
     &lt;span style=&#34;color: #2b91af&#34;&gt;int&lt;/span&gt; childBaseline = -1;
@@ -1235,7 +1450,7 @@
     &lt;span style=&#34;color: #008000&#34;&gt;// 若干无关代码，略&lt;/span&gt;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;当执行完A行时，childTop等于29。问题出在这里，再反向阅读代码，跟踪到了两个关键变量：&lt;/p&gt;
 
@@ -1272,10 +1487,10 @@
     
     <item>
       <title>《从来就没有救世主》读书笔记</title>
-      <link>http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</link>
+      <link>http://boxcounter.com/reading_notes/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</link>
       <pubDate>Sat, 08 Aug 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</guid>
+      <guid>http://boxcounter.com/reading_notes/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</guid>
       <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-08-08/从来就没有救世主.png&#34;/&gt;&lt;/p&gt;
 
 &lt;hr /&gt;
@@ -1292,11 +1507,11 @@
       <guid>http://boxcounter.com/technique/2015-08-01-Android%E4%B8%8B%E5%88%97%E8%A1%A8%E8%A7%86%E5%9B%BE%E7%9A%84%E6%80%A7%E8%83%BD%E4%BC%98%E5%8C%96/</guid>
       <description>
 
-&lt;h2 id=&#34;前言:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;前言&lt;/h2&gt;
+&lt;h1 id=&#34;前言&#34;&gt;前言&lt;/h1&gt;
 
 &lt;p&gt;Android下使用列表控件，如&lt;code&gt;RecyclerView&lt;/code&gt;和&lt;code&gt;ListView&lt;/code&gt;，很容易遇到滚动不流畅的问题。本文记录我的一次性能优化过程。&lt;/p&gt;
 
-&lt;h2 id=&#34;常见范式:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;常见范式&lt;/h2&gt;
+&lt;h1 id=&#34;常见范式&#34;&gt;常见范式&lt;/h1&gt;
 
 &lt;p&gt;我们经常这样使用列表控件：&lt;/p&gt;
 
@@ -1307,15 +1522,15 @@
 
 &lt;p&gt;这个范式用了一种优化技术：View重用。避免了频繁的create view和find view过程，这两个过程都是很耗时的。但仅这一种优化手段不足以解决所有的性能问题。&lt;/p&gt;
 
-&lt;h2 id=&#34;优化过程:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;优化过程&lt;/h2&gt;
+&lt;h1 id=&#34;优化过程&#34;&gt;优化过程&lt;/h1&gt;
 
 &lt;p&gt;接下来，我将基于一个实际项目的简化版来说明如何进行优化。&lt;/p&gt;
 
-&lt;h3 id=&#34;一-减少overdraw:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;一、减少Overdraw&lt;/h3&gt;
+&lt;h2 id=&#34;一-减少overdraw&#34;&gt;一、减少Overdraw&lt;/h2&gt;
 
 &lt;p&gt;Overdraw是常见性能损耗点，且多是无谓的性能损耗。相关资料非常丰富，这里不赘述。只提醒一点：善用&lt;code&gt;Window.setBackgroundDrawable*()&lt;/code&gt;。&lt;/p&gt;
 
-&lt;h3 id=&#34;二-内存优化:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;二、内存优化&lt;/h3&gt;
+&lt;h2 id=&#34;二-内存优化&#34;&gt;二、内存优化&lt;/h2&gt;
 
 &lt;p&gt;优化内存使用也是一种常用的性能优化手段。它的机理是：GC会暂停所有线程，而频繁触发GC会加剧掉帧问题。&lt;/p&gt;
 
@@ -1325,7 +1540,7 @@
 
 &lt;p&gt;优化方法是：尽量缓存、重用ImageView。比如：在&lt;code&gt;onBindViewHolder()&lt;/code&gt;中发现图片矩阵控件中已经包含了7个ImageView（上次该控件显示的主题有7张图片），当前要显示的主题有5张图片，那么直接重用前5个ImageView，隐藏剩下的2个ImageView。&lt;/p&gt;
 
-&lt;h3 id=&#34;三-精简布局:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;三、精简布局&lt;/h3&gt;
+&lt;h2 id=&#34;三-精简布局&#34;&gt;三、精简布局&lt;/h2&gt;
 
 &lt;p&gt;来看一下主题的赞和评论区域。其中赞区域会有两种展现形式（针对不同的应用场景）。想想如果是你来实现，会怎么布局。&lt;/p&gt;
 
@@ -1334,7 +1549,7 @@
 
 &lt;p&gt;布局方式可能会是这样：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
 
     &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 赞区域 --&amp;gt;&lt;/span&gt;
     &amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;horizontal&amp;quot;&lt;/span&gt; &amp;gt;
@@ -1353,13 +1568,13 @@
 
 &amp;lt;/LinearLayout&amp;gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;根据赞的显示方式来设置&lt;code&gt;GridLayout&lt;/code&gt;和&lt;code&gt;TextView&lt;/code&gt;的Visibility。&lt;/p&gt;
 
 &lt;p&gt;我的方法是：根据需要动态改变布局结构、保正显示效果的同时精简数量和层级。优化后是这样：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&amp;lt;LinearLayout android:orientation=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;vertical&amp;quot;&lt;/span&gt; &amp;gt;
 
     &lt;span style=&#34;color: #008000&#34;&gt;&amp;lt;!-- 赞区域 --&amp;gt;&lt;/span&gt;
     &amp;lt;ViewStub android:background=&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;heart.9.png&amp;quot;&lt;/span&gt; /&amp;gt;
@@ -1373,13 +1588,13 @@
 
 &amp;lt;/LinearLayout&amp;gt;
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;首先，原赞区域的&lt;code&gt;GridLayout&lt;/code&gt;和&lt;code&gt;TextView&lt;/code&gt;都放到单独的布局文件中，原布局中换上&lt;code&gt;ViewStub&lt;/code&gt;，根据需要动态inflate。其次，赞和评论图标改成.9图作为&lt;code&gt;Background&lt;/code&gt;、并辅以&lt;code&gt;paddingStart&lt;/code&gt;（具体数值由评论图标的宽度计算得到）。&lt;/p&gt;
 
 &lt;p&gt;后者的缺点是.9图可能因为拉伸变得不够清晰，但实测下来效果满足需要。&lt;/p&gt;
 
-&lt;h3 id=&#34;四-改进布局:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;四、改进布局&lt;/h3&gt;
+&lt;h2 id=&#34;四-改进布局&#34;&gt;四、改进布局&lt;/h2&gt;
 
 &lt;p&gt;常用的方法有：&lt;/p&gt;
 
@@ -1393,11 +1608,11 @@
 &lt;/ul&gt;&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h3 id=&#34;五-预处理:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;五、预处理&lt;/h3&gt;
+&lt;h2 id=&#34;五-预处理&#34;&gt;五、预处理&lt;/h2&gt;
 
 &lt;p&gt;需要引入一点业务数据结构来辅助说明。&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #008000&#34;&gt;// 约定：为了行文简洁，本文中所有代码都隐藏了诸如public关键字、构造函数等非核心内容。&lt;/span&gt;
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #008000&#34;&gt;// 约定：为了行文简洁，本文中所有代码都隐藏了诸如public关键字、构造函数等非核心内容。&lt;/span&gt;
 
 &lt;span style=&#34;color: #008000&#34;&gt;// 主题&lt;/span&gt;
 &lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;Topic&lt;/span&gt; {
@@ -1421,34 +1636,34 @@
     String mAvatarUrl;  &lt;span style=&#34;color: #008000&#34;&gt;// 头像的下载地址。&lt;/span&gt;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;这其中有部分数据是可以预处理的，得到的数据结构如下：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
     CharSequence mText;             &lt;span style=&#34;color: #008000&#34;&gt;// 包含Spannable（比如超链接）的正文。&lt;/span&gt;
     String mLikes;                  &lt;span style=&#34;color: #008000&#34;&gt;// 用逗号分隔的文字形式的点赞用户的名称。&lt;/span&gt;
     List&amp;lt;CharSequence&amp;gt; mComments;   &lt;span style=&#34;color: #008000&#34;&gt;// 包含Spannable的评论列表。&lt;/span&gt;
     String mCreateTime;             &lt;span style=&#34;color: #008000&#34;&gt;// 发表时间。&lt;/span&gt;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;然后在&lt;code&gt;onBindViewHolder()&lt;/code&gt;中就可以直接将&lt;code&gt;PreprocessResult&lt;/code&gt;的内容设置到相应的view上，避免在UI线程中动态处理造成掉帧。&lt;/p&gt;
 
 &lt;p&gt;这种方法的缺点是增加了复杂度：PreprocessResult需要和Topic保持同步更新。比如用户点赞、发表评论之后，需要同步修改PreprocessResult和Topic。&lt;/p&gt;
 
-&lt;h3 id=&#34;六-预创建:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;六、预创建&lt;/h3&gt;
+&lt;h2 id=&#34;六-预创建&#34;&gt;六、预创建&lt;/h2&gt;
 
 &lt;p&gt;分析发现，滚动过程会因为动态创建TopicView而卡顿。TopicView是用来显示整个主题的自定义View，包含前述的赞和评论等子布局。即便经过精简，整个布局依然比较复杂，inflate过程很耗时。于是预先创建了一些TopicView备用，在&lt;code&gt;onCreateViewHolder()&lt;/code&gt;中尽量使用它们，如果备用已经用完再动态创建。&lt;/p&gt;
 
-&lt;h3 id=&#34;七-优化textview:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;七、优化TextView&lt;/h3&gt;
+&lt;h2 id=&#34;七-优化textview&#34;&gt;七、优化TextView&lt;/h2&gt;
 
 &lt;p&gt;经过上述这几步优化之后，流畅度提升了很多，但偶尔还是会出现较明显的卡顿现象。分析发现是&lt;code&gt;TextView.setText()&lt;/code&gt;耗时过长导致的，在高强度测试下（长文主题，并且有很多评论），平均一次长文的调用就可能耗时22ms，已经超过了保证帧率的16ms上限。&lt;/p&gt;
 
 &lt;p&gt;因为这个项目的业务逻辑决定了主题、评论的文字内容不会被修改，只有增删。于是采用的优化方法是：对于主题正文和评论，用&lt;code&gt;StaticLayout&lt;/code&gt;配合自定义View展示文字。自定义View代码如下：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;StaticLayoutView&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;extends&lt;/span&gt; View {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;StaticLayoutView&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;extends&lt;/span&gt; View {
     &lt;span style=&#34;color: #0000ff&#34;&gt;private&lt;/span&gt; StaticLayout mLayout;
 
     &lt;span style=&#34;color: #0000ff&#34;&gt;public&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt; setLayout(StaticLayout layout) {
@@ -1485,22 +1700,22 @@
     }
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;StaticLayoutView相比TextView简单、高效很多，更重要的是&lt;code&gt;StaticLayout&lt;/code&gt;可以在非UI线程创建、初始化。于是前述「预处理」过程中的数据结构变为：&lt;/p&gt;
 
-&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;class&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;PreprocessResult&lt;/span&gt; {
     StaticLayout mText;             &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;= 之前是CharSequence&lt;/span&gt;
     String mLikes;
     List&amp;lt;StaticLayout&amp;gt; mComments;   &lt;span style=&#34;color: #008000&#34;&gt;// &amp;lt;= 之前是List&amp;lt;CharSequence&amp;gt;&lt;/span&gt;
     String mCreateTime;
 }
 &lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
+
 
 &lt;p&gt;优化后，在高强度测试环境下，平均帧率从34上升至47。实际环境中的平均帧率约为51。&lt;/p&gt;
 
-&lt;h2 id=&#34;总结:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;总结&lt;/h2&gt;
+&lt;h1 id=&#34;总结&#34;&gt;总结&lt;/h1&gt;
 
 &lt;p&gt;整个优化过程的核心思想是：&lt;/p&gt;
 
@@ -1517,7 +1732,7 @@
 &lt;li&gt;增加了复杂度；&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h2 id=&#34;后记:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;后记&lt;/h2&gt;
+&lt;h1 id=&#34;后记&#34;&gt;后记&lt;/h1&gt;
 
 &lt;p&gt;除前述优化方法之外，还有一些零星的、未能实际应用的优化方法。比如：&lt;/p&gt;
 
@@ -1535,7 +1750,7 @@
 &lt;li&gt;善用工具。比如Traceview、Memory Monitor、Hierarchy Viewer。本文所述的优化过程重度依赖这些工具。&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h2 id=&#34;参考资料:8c4b42c7fcdddc798bef89a3decbbb54&#34;&gt;参考资料&lt;/h2&gt;
+&lt;h1 id=&#34;参考资料&#34;&gt;参考资料&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;http://android-developers.blogspot.com/2010/10/traceview-war-story.html&#34;&gt;Traceview War Story&lt;/a&gt;&lt;/li&gt;
@@ -1673,234 +1888,6 @@
 　　有人会把这种方法称之为“忏悔式调试”。当你向别人解释自己的程序时，常常能发现自己犯下的一些错误。举个例子，如果你向别人解释上面的关于薪水的例子，你或许会这样对别人说：&lt;br /&gt;
 　　嗨，jennifer，你有空么？我现在遇到一个麻烦。这张员工薪水列表本来应当是按照顺序排列的，但里面有些名字乱序了。我原本打算看看是不是新输入的名字就会这种情况，但有时是对的，有时又不是。我向这些数据在我输入他们的时候就应当被排序，因为程序会在我输入数据的时候对其排序，然后在数据保存的时候再排一遍。等一下，不对，它没有在输入数据的时候对其排序。就是这里。程序只是粗略地对这些数据进行了排序。谢谢你，jennifer，你帮了我个大忙。&lt;/p&gt;
 &lt;/blockquote&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>隔栏、断言、防御型和攻击型编程的思考</title>
-      <link>http://boxcounter.com/technique/2014-01-12-assert-defensive-offensive-programming/</link>
-      <pubDate>Sun, 12 Jan 2014 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/technique/2014-01-12-assert-defensive-offensive-programming/</guid>
-      <description>
-
-&lt;h1 id=&#34;一-前言:03abadb4947350f837a3f50c1387e0d7&#34;&gt;一、前言&lt;/h1&gt;
-
-&lt;p&gt;　　本文的内容最初源自我重温《代码大全》时候读到的一段内容，然后和同事讨论又引发了自己的一些思索。最后觉得这值得写下来，一来我一直很喜欢琢磨编码风格，有一些这方面的​思考，但都是一些存放在脑子里的思维碎片，（部分）整理成文对我自己是件好事。二来抛砖引玉，希望能找到一些同好探讨。&lt;/p&gt;
-
-&lt;h1 id=&#34;二-常用的断言宏:03abadb4947350f837a3f50c1387e0d7&#34;&gt;二、常用的断言宏&lt;/h1&gt;
-
-&lt;p&gt;　　先贴一段我常用的断言宏，后面讲述的时候所说的ASSERT是通指下面这一组ASSERT*。
-&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;#ifdef DEBUG&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT(x) assert(x)&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#else&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT(x)&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#endif&lt;/span&gt;
-
-&lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT_RETURN(x)            {ASSERT(x); if(!(x)) {return;}}&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT_RETURN_VAL(x, ret)   {ASSERT(x); if(!(x)) {return ret;}}&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT_GOTO(x, label)       {ASSERT(x); if(!(x)) {goto label;}}&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT_BREAK(x)             {ASSERT(x); if(!(x)) {break;}}&lt;/span&gt;
-&lt;span style=&#34;color: #0000ff&#34;&gt;#define ASSERT_CONTINUE(x)          {ASSERT(x); if(!(x)) {continue;}}&lt;/span&gt;
-&lt;/pre&gt;&lt;/div&gt;
-&lt;/p&gt;
-
-&lt;h1 id=&#34;三-隔栏与断言:03abadb4947350f837a3f50c1387e0d7&#34;&gt;三、隔栏与断言&lt;/h1&gt;
-
-&lt;p&gt;　　《代码大全》里有这么一段“隔栏与断言的关系”：&lt;/p&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;隔栏外部的程序应使用错误处理技术，在那里对数据做的任何假定都是不安全的。&lt;br /&gt;
-隔栏内部的程序应使用断言技术，因为传进来的数据应该已在通过隔栏时被清理过了。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;　　这里的“隔栏”我理解为一些接口，比如类的public函数。按照上述说法，应该在public函数的对参数进行合法性验证“if (!x) return”，在private函数的开头使用ASSERT。&lt;/p&gt;
-
-&lt;p&gt;　　感觉也有点道理。但是觉得又不太习惯。我习惯这么做：&lt;br /&gt;
-　　public和private函数都用ASSERT，既把问题反馈给外部使用者，又反馈自身内部的问题。&lt;/p&gt;
-
-&lt;p&gt;　　曾经和同事讨论过这个问题，同事没我这么挑（或者“钻牛角尖”？），他一般的做法是：在public函数里做参数检查，private里不对参数做检查。一来是priva​te里没必要做判断（public已经判断过了），二来是影响效率。&lt;/p&gt;
-
-&lt;p&gt;　　我尝试了一段时间，但是还是觉得不合我的习惯，原因是：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;即便public函数做了参数检查，也难保开发者不引入别的问题。比如传递参数过程中误改。&lt;br /&gt;&lt;/li&gt;
-&lt;li&gt;所谓“内部”、“外部”，只是个相对的概念。多人协作来开发、使用这些类的过程中，一个模块中的函数可能由不同的开发者编写，相互都可以理解为“外部”（甚至不同函数也可​以认为互为“外部”）。即便在做设计时已经约定好相互之间的数据要求，也难免实现过程中会偏离。更不用说使用极端敏捷开发、基本不做文档化设计的小团队协作。&lt;br /&gt;&lt;/li&gt;
-&lt;li&gt;如“隔栏和断言的关系”所述：“隔栏内部的程序应使用断言技术，因为传进来的数据应该已在通过隔栏时被清理过了”。&lt;br /&gt;&lt;/li&gt;
-&lt;li&gt;担忧的那部分性能损耗极有可能微乎其微。（后面有一些性能优化的想法分享。）&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;　　又琢磨了琢磨，感觉《代码大全》里说的也有道理。隔栏处确实更适合做过滤，而不是断言。&lt;br /&gt;
-　　因为隔栏外部的程序未必需要隔栏内部的反馈。比如单元测试时，测试程序可能会有意的传入非法的参数。&lt;/p&gt;
-
-&lt;h1 id=&#34;四-一个讨论引发的思索:03abadb4947350f837a3f50c1387e0d7&#34;&gt;四、一个讨论引发的思索&lt;/h1&gt;
-
-&lt;p&gt;　　另外，同事分享了一个讨论贴，主贴里楼主愤怒地吐槽：&lt;/p&gt;
-
-&lt;blockquote&gt;
-&lt;p&gt;昨天线上的一个服务程序问了点问题，程序无限重启。&lt;br /&gt;
-通过gdb调试发现该程序在某个函数里调用空指针，然后造成了段错误。因为有守护进程监控，所以有了无限重启的现像。&lt;br /&gt;
-我把引起段错误的地方告诉了程序的作者，此人竟然说，这个指针应该不为空才对，现在指针为空说明了数据有问题，应该让数据的生产者去修改，他拒绝修改。&lt;/p&gt;
-&lt;/blockquote&gt;
-
-&lt;p&gt;　　跟帖的有支持楼主的（后简称A），也有认同文中“程序的作者”（B）。&lt;/p&gt;
-
-&lt;p&gt;　　回帖里支持双方的都有。比如支持B的典型说法有：“strcpy不就这样么？”、“野指针同样会照成崩溃，所以是否检查空指针完全看程序各个模块之间的约定”。&lt;/p&gt;
-
-&lt;p&gt;　　我是毫不犹豫的支持A的：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;错误应该尽早暴露。&lt;br /&gt;
-  并且应该尽可能由开发者可控的引爆，而不是被动的爆掉，然后没头脑地分析爆炸现场。简单来说，一个好的开发人员应该让修正问题的代价尽可能的小。&lt;/li&gt;
-&lt;li&gt;参数检查不是银弹，但即便如此，对一些普遍的错误做处理也是必要且高效的。&lt;br /&gt;
-  比如常见的NULL指针。这些常见的错误可能占各种参数错误发生总量的一半，解决掉它们带来的收益是很可观的。很多事情很难做到100%完美，但是度量（很多时候靠经验）​面对的问题，整理出解决这些问题的收益比曲线，然后处理掉那些收益比最高的问题，就是一个很好的方法。而不是嚷嚷“我没办法解决100%的问题，所以我就不解决了。问题出​现了再说”。激进一点说，在我看来，这是不负责的想法。&lt;/li&gt;
-&lt;li&gt;标准库的做法并不一定是正确的，比如臭名昭著的realloc。&lt;br /&gt;
-  具体的缺点很多文章里有讨论，《代码大全》里也有提到。&lt;/li&gt;
-&lt;li&gt;函数都需要检查参数。&lt;br /&gt;
-  至于如何检查参数（比如是否需要检查空指针），主要取决于函数本身对参数的期望，而不应只取决“模块之间的约定”。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;　　说的远一些，我很喜欢有调试开关或者调试功能的开发库和工具。比如：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;*nix平台下的glibc中的MALLOC_CHECK_宏、valgrind，还有electric-fence（貌似这货会误报，哪位朋友分享一个更好的？）等等。&lt;/li&gt;
-&lt;li&gt;windows下的application verifier、driver verifier，还有checked版本的系统等等。&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;　　对我来说，我甚至希望所有的开发库都有类似的机制。我希望某天开发者能通过某个开关让strcpy检查空指针，检查源、目的覆盖问题等等。&lt;/p&gt;
-
-&lt;p&gt;　　此外，还有一些涉及到防御型编程和“攻击型编程”（好像没有约定俗成的名称？姑且这么称呼吧）的想法。&lt;/p&gt;
-
-&lt;p&gt;　　我个人推荐的做法是：对自己狠一点，对最终用户温柔一些。精确点说是“开发和内测版本中多用攻击型技术，让故障尽早（并且可控地）被引爆。发布版本里多用防御行编程，以包​容一些非致命的问题。”&lt;/p&gt;
-
-&lt;p&gt;　　举例来说，本文最开始的ASSERT_RETURN宏就是这种方法的一个典型：&lt;/p&gt;
-
-&lt;p&gt;　　在开发版本（#ifdef DEBUG分支）中，启用了assert，一旦不符合研发人员的预期，就会立刻引爆，让研发能够发现问题。而发布版本中则只是做了&amp;rdquo;if return/break/continue&amp;rdquo;等，包容了错误。让程序能够正常的运行下去。&lt;/p&gt;
-
-&lt;p&gt;　　另外在发布版本中是包容还是优雅的退出，取决于具体的问题。比如office中发现用户通过剪贴板复制过来的数据不合要求，如果此时“优雅的退出”，用户可能杀人的心都有​了。&lt;/p&gt;
-
-&lt;h1 id=&#34;五-性能优化相关的一些想法:03abadb4947350f837a3f50c1387e0d7&#34;&gt;五、性能优化相关的一些想法&lt;/h1&gt;
-
-&lt;p&gt;　　这个话题也是一个很庞大的话题，我只说说我个人的想法：&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;优化的前提是掌握了准确的性能分析数据，明确了性能瓶颈。没有进行科学的性能分析就着手进行的优化都是耍流氓。&lt;br /&gt;
-  当然，开发过程中就拍脑袋想出来的“性能瓶颈”更是地球人愚蠢的想法（我自己犯过好几次，而且还是在我高举“过早优化是一切罪恶之源”大旗的情况下。最后都证明是捡了芝麻​丢了西瓜，感谢我的同事点醒了我）。&lt;br /&gt;
-  开发阶段需要做的事是尽量的模块化和抽象，当后续诊断出性能瓶颈后可以很方便的替换、调优那些模块。&lt;/li&gt;
-&lt;li&gt;自上而下，先考虑架构，再考虑层、模块，最后考虑底层的实现。&lt;br /&gt;
-  切莫为“这个密集调用的函数里这条检查语句很复杂，可能会影响整体性能”而“优化”。首先，参考上述的1，别耍流氓。其次，优化也有收益比曲线，先优化收益比最高的那些瓶​颈，那些才是金矿。&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;　　最后，广而告之：《代码大全》，你值得拥有。&lt;/p&gt;
-
-&lt;h1 id=&#34;六-版本记录:03abadb4947350f837a3f50c1387e0d7&#34;&gt;六、版本记录&lt;/h1&gt;
-
-&lt;ul&gt;
-&lt;li&gt;v1.0 - 2014-01-05, 初始发布。&lt;/li&gt;
-&lt;li&gt;v1.1 - 2014-01-12, 增加了隔栏处的新思考。&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>搬家咯</title>
-      <link>http://boxcounter.com/essay/2014-01-08-migration/</link>
-      <pubDate>Wed, 08 Jan 2014 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2014-01-08-migration/</guid>
-      <description>&lt;p&gt;新年新气象，blog搬个家庆祝下~&lt;/p&gt;
-
-&lt;p&gt;　　好吧，上面开玩笑的。若非不得已，我才不愿意迁移blog。之前blog系统用的是MyBB，这是个论坛系统。之所以用一个论坛系统作为blog系统，主要是我喜欢论坛的宽版面。码农经常需要贴代码，强制折行之后那个显式效果怎一个惨绝人寰了得。A总说论坛系统里MyBB还不错，比如轻巧。于是就从WordPress迁移到了MyBB。当时就希望是最后一次迁移blog，没想到过了两三年又要来这么一遭，又要脱层皮。&lt;/p&gt;
-
-&lt;p&gt;　　这次选择jekyll也是因为A总推荐。尝试了一下，发现貌似不错，很符合码农的操作习惯。其实我更希望有一个完全支持latex或者org-mode的博客系统。前者我估计只能是个梦，毕竟latex学习成本比较高，大多数blogger都不会愿意学。org-mode貌似jekyll支持，但是搜索了一下，发现网上有人说org-mode导出的html有时候jekyll支持的并不好。所以，为了避免日后迁移到一半才发现问题再推倒重来，就放弃了这个想法。老老实实用markdown吧。不过隐约觉得markdown的貌似过于轻量了，比较担心不够用。希望这是我杞人忧天。&lt;/p&gt;
-
-&lt;p&gt;　　无奈。再重复一次吧：希望这是最后一次迁移blog～&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>2013读书小结</title>
-      <link>http://boxcounter.com/essay/2014-01-01-2013%E8%AF%BB%E4%B9%A6%E5%B0%8F%E7%BB%93/</link>
-      <pubDate>Wed, 01 Jan 2014 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2014-01-01-2013%E8%AF%BB%E4%B9%A6%E5%B0%8F%E7%BB%93/</guid>
-      <description>&lt;p&gt;大概是在8月份，我突然想起要给今年读过的书建一个列表，于是拿着kindle、手机整理了一下：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;已完成
-
-&lt;ul&gt;
-&lt;li&gt;杂书
-
-&lt;ul&gt;
-&lt;li&gt;《细说秦汉》黎东方/王子今&lt;/li&gt;
-&lt;li&gt;《细说两晋南北朝》沈起炜&lt;/li&gt;
-&lt;li&gt;《吕著三国通史》吕思勉&lt;/li&gt;
-&lt;li&gt;《易中天中华史：国家》易中天&lt;/li&gt;
-&lt;li&gt;《易中天中华史：奠基》易中天&lt;/li&gt;
-&lt;li&gt;《如果现在是历史》吴空&lt;/li&gt;
-&lt;li&gt;《万历十五年》黄仁宇（3rd。毫无疑问这是一本好书，只是不太懂为什么地位那么高）&lt;/li&gt;
-&lt;li&gt;《如果这是宋史 1-7》高天流云&lt;/li&gt;
-&lt;li&gt;《中国史纲》张荫麟/吕思勉/蒋廷黻&lt;/li&gt;
-&lt;li&gt;《MacTalk 人生元编程》池建强&lt;/li&gt;
-&lt;li&gt;《看见》柴静&lt;/li&gt;
-&lt;li&gt;《重说中国近代史》张鸣&lt;/li&gt;
-&lt;li&gt;《三国配角演义》马伯庸&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;技术（部分缺失）
-
-&lt;ul&gt;
-&lt;li&gt;《The Art of Debugging with GDB, DDD, and Eclipse》Norman Matloff/Peter Jay Salzman&lt;/li&gt;
-&lt;li&gt;《LINUX System Pogramming》Robert Love&lt;/li&gt;
-&lt;li&gt;《Linux内核设计与实现》Rebert Love&lt;/li&gt;
-&lt;li&gt;《Debug.Hacks中文版_深入调试的技术和工具》吉岡弘隆/大和一洋/大岩尚宏/安部東洋/吉田俊輔（只读了应用层的部分）&lt;/li&gt;
-&lt;li&gt;《软件调试修炼之道》Paul Butcher（我很喜欢，但是朋友觉得一般）&lt;/li&gt;
-&lt;li&gt;《程序员的自我修养》俞甲子/石凡/潘爱民（去年还是前年读了windows部分，当时没想到还会有机会把linux部分也读完 \^_\^）&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;进行中
-
-&lt;ul&gt;
-&lt;li&gt;《柏杨版资治通鉴》司马光/柏杨 （目前读到刘宋末期，感谢bookworm兄制作了精排电子版）&lt;/li&gt;
-&lt;li&gt;《古代汉语》王立 （自学第一册，期望每篇都能背诵）&lt;/li&gt;
-&lt;li&gt;《大话设计模式》程杰&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;中断
-
-&lt;ul&gt;
-&lt;li&gt;《时间的形状》汪洁（30%）&lt;/li&gt;
-&lt;li&gt;《怪诞行为学2》Dan Ariely（看了60%，后半段没吸引力）&lt;/li&gt;
-&lt;li&gt;《中国哲学简史》冯友兰（看了40%，不是这块料~）&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;　　总得来说，去年阅读总量少，技术书更少，仅读的那几本还都是下半年读的。&lt;/p&gt;
-
-&lt;p&gt;　　新年新列表，除了还在进行中的书之外，现在排在阅读列表上的有这些：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;杂书
-
-&lt;ul&gt;
-&lt;li&gt;《易中天中华史：祖先》易中天（易先生貌似在写一套中华史，我应该每本都会读）&lt;/li&gt;
-&lt;li&gt;《布局天下：中国古代军事地理大势》饶胜文&lt;/li&gt;
-&lt;li&gt;《慈禧全传》高阳&lt;/li&gt;
-&lt;li&gt;《胡雪岩全传》高阳&lt;/li&gt;
-&lt;li&gt;《大秦帝国》孙皓晖  （3rd。之前读了两遍，都是当年在320*240的htc上完成的，500W字著作，真是难为我高度近视的双眼）&lt;/li&gt;
-&lt;li&gt;《史记》司马迁 （重读，不知道第几遍，算作3rd吧）&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;技术
-
-&lt;ul&gt;
-&lt;li&gt;《代码大全》Steve McConnell（3rd。推荐愿意把coding当作艺术的朋友读读）&lt;/li&gt;
-&lt;li&gt;《敏捷软件开发：原则、模式与实践》Robert C. Martin&lt;/li&gt;
-&lt;li&gt;《敏捷技能修炼：敏捷软件开发与设计的最佳实践》Alan Shalloway/Scott Bain/Ken Pugh/Amir Kolsky&lt;/li&gt;
-&lt;li&gt;《高效程序员的45个习惯：敏捷开发修炼之道》Venkat Subramaniam/Andy Hunt&lt;/li&gt;
-&lt;li&gt;《代码之美Beautiful Code》Grey Wilson&lt;/li&gt;
-&lt;li&gt;《操作系统设计与实现》Andrew S. Tanenbaum/Albert S. Woodhull&lt;/li&gt;
-&lt;li&gt;《操作系统：精髓与设计原理》William Stallings&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
 </description>
     </item>
     

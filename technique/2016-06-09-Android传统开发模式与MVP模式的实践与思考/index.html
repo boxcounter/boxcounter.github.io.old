@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>Boxcounter的烂笔头</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <link rel="stylesheet" href="/css/bootstrap.min.css" media="screen">
+    <link rel="stylesheet" href="/css/hugo-bootswatch.css">
+  </head>
+  <body>
+
+    <div class="navbar navbar-default navbar-fixed-top">
+      <div class="container">
+        <div class="navbar-header">
+          <a href="/" class="navbar-brand">Boxcounter的烂笔头</a>
+          <button class="navbar-toggle" type="button" data-toggle="collapse" data-target="#navbar-main">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+        </div>
+        <div class="navbar-collapse collapse" id="navbar-main">
+          <ul class="nav navbar-nav navbar-right">
+           <li class="dropdown">
+              <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="sections">Sections<span class="caret"></span></a>
+              <ul class="dropdown-menu" aria-labelledby="download">
+              
+                <li><a href="/essay">essay</a></li>
+              
+                <li><a href="/technique">technique</a></li>
+              
+              </ul>
+            </li> 
+          </ul>
+        </div>
+      </div>
+    </div>
+
+
+    <div class="container">
+        <h1><a href="http://localhost:1313/technique/2016-06-09-Android%E4%BC%A0%E7%BB%9F%E5%BC%80%E5%8F%91%E6%A8%A1%E5%BC%8F%E4%B8%8EMVP%E6%A8%A1%E5%BC%8F%E7%9A%84%E5%AE%9E%E8%B7%B5%E4%B8%8E%E6%80%9D%E8%80%83/">Android传统开发模式与MVP模式的实践与思考</a></h1>
+        <hr />
+        <span class="post-time">2016-06-09</span>
+        <div class="post">
+            
+
+<h2 id="前言:36a8c89a0f4741386c86f116bf20f6b7">前言</h2>
+
+<p>作为Android开发者，最熟悉的开发模式自然是一个Application加上若干个Activity。每个Activity中，顺着其生命周期方法安排相应的功能。典型的就是：</p>
+
+<ul>
+<li>在onCreate()中初始化各种View，包括设定Listener，在其中安排逻辑代码；</li>
+<li>在onSaveInstance()中保存各种数据；</li>
+</ul>
+
+<p>这种模式就是俗称的『传统开发模式』。随着Android开发者群体的日益壮大，项目规模日渐庞大，传统开发模式的局限也逐渐体现出来，越来越多的开发者开始寻找更优的Android软件构建模式。这时，桌面开发时代就盛行的MVC、MVP、MVVM模式自然成为了众多开发者首先尝试的解决方案。</p>
+
+<p>本文并不准备完整的介绍MVC、MVP、MVVM这三种模式的详细内容与区别。而是讲重点放在如何用MVP模式来解决因传统开发模式的局限性导致的问题。</p>
+
+<h2 id="名词定义:36a8c89a0f4741386c86f116bf20f6b7">名词定义</h2>
+
+<p>本文中会反复提到几个名词，为了方便区分，在这里先定义它们的概念。</p>
+
+<ul>
+<li>交互逻辑：泛指UI相关的判定、执行逻辑。比如：某个View是否enable、是否visible、变更enable、变更visibility，显示Toast，弹出Dialog；</li>
+<li>业务逻辑：泛指与项目业务相关的逻辑。比如：发起网络请求创建一个用户、发表一个评论；</li>
+<li>Entity：包含属性、相应Setter/Getter、以及对其属性进行简单操作的方法的数据类、对象；</li>
+</ul>
+
+<p>有了这些预热工作，咱们可以开始进入正题了。首先我们需要明确传统开发模式的问题。</p>
+
+<h2 id="传统开发模式的问题:36a8c89a0f4741386c86f116bf20f6b7">传统开发模式的问题</h2>
+
+<p>传统开发模式的所有代码都放在Activity/Fragment中（为行文简洁，后简称A/F），比如：UI、交互逻辑、业务逻辑、生命周期、权限申请/管理。</p>
+
+<p>这会带来以下几种问题：</p>
+
+<p><strong>1. 可读性性差</strong></p>
+
+<p>A/F代码量大，职能庞杂，导致代码可读性变差。这个是开发者的共识，无需多言。</p>
+
+<p><strong>2. 可复用性差</strong></p>
+
+<p>当多个A/F引用了相同的UI组件时，常见的做法是：</p>
+
+<pre><code>实现一个Custom View类，接受一个Entity，将其呈现。同时对外提供一个Listenr/Callback（为行文简洁，后简称为L/C） interface。每个A/F创建自己的实现。
+</code></pre>
+
+<p>这解决了View或者说是UI的复用问题。但并没有解决相应的交互逻辑和业务逻辑的复用问题：每个A/F都需要实现一个负责交互逻辑和业务逻辑的L/C。</p>
+
+<p>于是，为了实现逻辑的可复用性，常用的做法是：</p>
+
+<pre><code>实现一个L/C类，每个A/F都创建一个实例。（Entity会作为参数传递给它，供逻辑代码使用）
+</code></pre>
+
+<p>到这里，我们审视这个解决方案，会发现这实际上就是一个手工打造的、粗糙的MVC模式：</p>
+
+<ul>
+<li>Entity是Model；</li>
+<li>L/C是Controller；</li>
+<li>Custom View是View；</li>
+</ul>
+
+<p><strong>3. 无法（单元）测试</strong></p>
+
+<p>因为所有的<strong>单元</strong>都融进了F/A，相互交杂，没法针对单个单元做测试。最多只能进行集成测试和UI测试。</p>
+
+<p>而根据Mike Cohn的测试金字塔概念，单元测试、集成测试、UI测试之比应为7:2:1。</p>
+
+<p>** TODO 此处需要有图 **</p>
+
+<p>所以，传统开发模式基本无法测试。</p>
+
+<p>而无法测试意味着难以在保证稳定性的前提下进行维护和扩展（具体原因留待以后的测试文章讲述）。</p>
+
+<p>所以，开发者们把希望的目光投向了MVPMVP。</p>
+
+<h2 id="mvp模式:36a8c89a0f4741386c86f116bf20f6b7">MVP模式</h2>
+
+<h3 id="特点:36a8c89a0f4741386c86f116bf20f6b7">特点</h3>
+
+<p>MVP模式有很多优点，给我留下深刻印象的是：</p>
+
+<ol>
+<li>解耦</li>
+<li>单一职责</li>
+<li>高可复用性</li>
+<li>易于交流</li>
+</ol>
+
+<p>Model/View/Presenter三组件结构就决定了特点1、2、3，从前述手工打造的MVC也可见一斑。而特点4和设计模式是相似的：</p>
+
+<blockquote>
+<p>Having a vocabulary for patterns lets us talk about them with our colleagues,
+in our documentation, and even to ourselves. It makes it easier to think about
+designs and to communicate them and their trade-offs to others. Finding good
+names has been one of the hardest parts of developing our catalog.</p>
+
+<p>——《Design Patterns》</p>
+</blockquote>
+
+<p>但也有缺点：</p>
+
+<ol>
+<li>学习成本</li>
+<li>class、interface的数量增加</li>
+</ol>
+
+<h3 id="职能划分:36a8c89a0f4741386c86f116bf20f6b7">职能划分</h3>
+
+<p><strong>View</strong></p>
+
+<ol>
+<li>响应交互
+
+<ul>
+<li>接收用户的交互事件，并转交给Presenter处理。</li>
+<li>接受Presenter的指令（调用），完成相应的UI呈现。</li>
+</ul></li>
+<li>响应生命周期事件。</li>
+<li>（容器View）管理Sub Views。</li>
+</ol>
+
+<p><strong>Presenter</strong></p>
+
+<ol>
+<li>交互逻辑</li>
+</ol>
+
+<p><strong>Model</strong></p>
+
+<ol>
+<li>业务逻辑。比如：发起网络请求并解析响应。</li>
+<li>数据的维持。比如：本地存储的维护、内存数据的增删查改。</li>
+<li>为Presenter提供信息支撑。</li>
+</ol>
+
+        </div>
+
+              
+<footer>
+  <div class="pull-right small text-muted">Power by <a href="https://gohugo.io/">Hugo</a> and Theme by <a href="Hugo">Bootswatch</a></div>
+</footer>
+
+     </div>
+
+        <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
+        <script src="/js/bootstrap.min.js"></script>
+        <script src="/js/bootswatch.js"></script>
+    <script data-no-instant>document.write('<script src="http://'
+        + (location.host || 'localhost').split(':')[0]
+		+ ':1313/livereload.js?mindelay=10"></'
+        + 'script>')</script></body>
+</html>
+
+

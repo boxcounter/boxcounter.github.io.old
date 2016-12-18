@@ -28,6 +28,8 @@
               
                 <li><a href="/essay">essay</a></li>
               
+                <li><a href="/reading_notes">reading_notes</a></li>
+              
                 <li><a href="/technique">technique</a></li>
               
               </ul>
@@ -42,17 +44,33 @@
         <h1><a href="http://boxcounter.com/technique/2014-01-12-assert-defensive-offensive-programming/">隔栏、断言、防御型和攻击型编程的思考</a></h1>
         <hr />
         <span class="post-time">2014-01-12</span>
+
+        
+            <div id="toc" class="well">
+                <nav id="TableOfContents">
+<ul>
+<li><a href="#一-前言">一、前言</a></li>
+<li><a href="#二-常用的断言宏">二、常用的断言宏</a></li>
+<li><a href="#三-隔栏与断言">三、隔栏与断言</a></li>
+<li><a href="#四-一个讨论引发的思索">四、一个讨论引发的思索</a></li>
+<li><a href="#五-性能优化相关的一些想法">五、性能优化相关的一些想法</a></li>
+<li><a href="#六-版本记录">六、版本记录</a></li>
+</ul>
+</nav>
+            </div>
+        
+
         <div class="post">
             
 
-<h1 id="一-前言:03abadb4947350f837a3f50c1387e0d7">一、前言</h1>
+<h1 id="一-前言">一、前言</h1>
 
 <p>　　本文的内容最初源自我重温《代码大全》时候读到的一段内容，然后和同事讨论又引发了自己的一些思索。最后觉得这值得写下来，一来我一直很喜欢琢磨编码风格，有一些这方面的​思考，但都是一些存放在脑子里的思维碎片，（部分）整理成文对我自己是件好事。二来抛砖引玉，希望能找到一些同好探讨。</p>
 
-<h1 id="二-常用的断言宏:03abadb4947350f837a3f50c1387e0d7">二、常用的断言宏</h1>
+<h1 id="二-常用的断言宏">二、常用的断言宏</h1>
 
 <p>　　先贴一段我常用的断言宏，后面讲述的时候所说的ASSERT是通指下面这一组ASSERT*。
-<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span style="color: #0000ff">#ifdef DEBUG</span>
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span><span style="color: #0000ff">#ifdef DEBUG</span>
 <span style="color: #0000ff">#define ASSERT(x) assert(x)</span>
 <span style="color: #0000ff">#else</span>
 <span style="color: #0000ff">#define ASSERT(x)</span>
@@ -66,7 +84,7 @@
 </pre></div>
 </p>
 
-<h1 id="三-隔栏与断言:03abadb4947350f837a3f50c1387e0d7">三、隔栏与断言</h1>
+<h1 id="三-隔栏与断言">三、隔栏与断言</h1>
 
 <p>　　《代码大全》里有这么一段“隔栏与断言的关系”：</p>
 
@@ -94,7 +112,7 @@
 <p>　　又琢磨了琢磨，感觉《代码大全》里说的也有道理。隔栏处确实更适合做过滤，而不是断言。<br />
 　　因为隔栏外部的程序未必需要隔栏内部的反馈。比如单元测试时，测试程序可能会有意的传入非法的参数。</p>
 
-<h1 id="四-一个讨论引发的思索:03abadb4947350f837a3f50c1387e0d7">四、一个讨论引发的思索</h1>
+<h1 id="四-一个讨论引发的思索">四、一个讨论引发的思索</h1>
 
 <p>　　另外，同事分享了一个讨论贴，主贴里楼主愤怒地吐槽：</p>
 
@@ -140,7 +158,7 @@
 
 <p>　　另外在发布版本中是包容还是优雅的退出，取决于具体的问题。比如office中发现用户通过剪贴板复制过来的数据不合要求，如果此时“优雅的退出”，用户可能杀人的心都有​了。</p>
 
-<h1 id="五-性能优化相关的一些想法:03abadb4947350f837a3f50c1387e0d7">五、性能优化相关的一些想法</h1>
+<h1 id="五-性能优化相关的一些想法">五、性能优化相关的一些想法</h1>
 
 <p>　　这个话题也是一个很庞大的话题，我只说说我个人的想法：</p>
 
@@ -154,7 +172,7 @@
 
 <p>　　最后，广而告之：《代码大全》，你值得拥有。</p>
 
-<h1 id="六-版本记录:03abadb4947350f837a3f50c1387e0d7">六、版本记录</h1>
+<h1 id="六-版本记录">六、版本记录</h1>
 
 <ul>
 <li>v1.0 - 2014-01-05, 初始发布。</li>

@@ -1,0 +1,769 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Boxcounter的烂笔头</title>
+    <link>http://boxcounter.com/tags/%E6%95%85%E9%9A%9C%E5%88%86%E6%9E%90/index.xml</link>
+    <description>Recent content on Boxcounter的烂笔头</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <atom:link href="http://boxcounter.com/tags/%E6%95%85%E9%9A%9C%E5%88%86%E6%9E%90/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>一起疑似内存泄漏</title>
+      <link>http://boxcounter.com/technique/2014-01-12-suspected-memory-leak/</link>
+      <pubDate>Sun, 12 Jan 2014 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2014-01-12-suspected-memory-leak/</guid>
+      <description>&lt;p&gt;上周遇到一起极其诡异的内存泄漏。现象是：&lt;br /&gt;
+某种测试方法可以使程序物理内存使用量（top命令的RES列）持续上升。当停止测试之后，程序内存使用量稳定在测试过程中的最高值不变。从现象上看就是一典型的内存泄漏。&lt;/p&gt;
+
+&lt;p&gt;我的诊断步骤：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;使用valgrind的memcheck检查泄漏。故障重现后让程序自然退出。memcheck提示资源泄漏量为0.&lt;br /&gt;
+所以，该内存应该没有被泄漏，程序中对它们还有引用，在程序退出时被正常释放掉了。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;使用valgrind的massif分析内存使用。找到了一处可疑的「泄漏」点，90%的内存都是在该处分配。&lt;br /&gt;
+但是调试发现该处分配（通过malloc）的内存都被正确的释放（通过free）掉了。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;使用malloc_info函数查看程序运行过程中的内存情况。
+这是在程序物理内存占用2G后我停止测试以后一段时间（大概5分钟）的输出：&lt;/p&gt;
+
+&lt;p&gt;arena(462848), ordblks(2), smblks(1), hblks(5), hblkhd(104857600), usmblks(0), fsmblks(32), uordblks(459424), fordblks(3424), keepcost(3360).&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;从上面看，从heap中申请了462848(arena的值，约46KB)，mmap申请的内存是104857600（hblkhd的值，约100MB）。这俩值加在一起和top里显示的2G差很远啊。
+   注，arena和hblkhd的man注解：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; arena   The total amount of memory allocated by means other than
+         mmap(2) (i.e., memory allocated on the heap).  This figure
+         includes both in-use blocks and blocks on the free list.
+ hblkhd  The number of bytes in blocks currently allocated using
+         mmap(2).
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;决定统计内存分配释放的次数和尺寸，目的是检查是否严重失衡。因为new/delete不太好跟踪，所以只处理了malloc/free。&lt;br /&gt;
+使用的方法是wrap（gcc/g++的「-Wl,&amp;ndash;wrap,malloc」选项），看了一眼glibc的源码，以在free时候得到待释放内存的尺寸。最后的结果是没有严重失衡，应该不是显式的内存释放。&lt;br /&gt;
+其实这个实验原本就没有报很大的希望，一来new/delete没有照顾到，不够精确。二来如果是显式的泄漏memcheck早就报告了。但是当时没有思路了，姑且一试，看能不能找到点面包屑。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;搜索了一些资料。有些提到glibc内部使用brk和mmap来进行内存分配，其中brk可能会造成这种泄漏假象。&lt;br /&gt;
+于是在程序的开始设置了M_MMAP_THRESHOLD，发现故障依然存在。&lt;/p&gt;
+
+&lt;p&gt;mallopt(M_MMAP_THRESHOLD, 1024*1024*1024); // 1G&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;原本还想在不同的模块里使用不同的堆，然后反复根据堆的尺寸细分堆，来精确定位。却发现linux下没有类似HeapCreate的函数。&lt;/p&gt;
+
+&lt;p&gt;技穷了。于是我邀请一位同事来协助分析，在协作中我发现我犯了个错误：尝试方法5的时候，我理解反了M_MMAP_THRESHOLD的含义，于是提供错了参数。实际上应该是这样：&lt;/p&gt;
+
+&lt;p&gt;mallopt(M_MMAP_THRESHOLD, 0);&lt;/p&gt;
+
+&lt;p&gt;然后故障消失了。也就是说，这次的故障实际并不是我们程序实现的资源泄漏，而是glibc堆管理机制导致的「资源泄漏」。我很奇怪为什么glibc没有重用程序调用free释放掉的空间，而是继续扩充堆。这个问题值得继续琢磨。&lt;/p&gt;
+
+&lt;p&gt;总结：本次故障的分析过程里我的粗心大意又给自己惹了大麻烦。原本思路是正确的，结果走歪了。。。 自作孽啊。。。&lt;/p&gt;
+
+&lt;p&gt;但是，即便这个故障不是程序实现BUG所导致的，实际上还是会对程序造成不好的影响：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;如果调整M_MMAP_THRESHOLD让程序不「泄漏」，那么资源占用和性能会变差。原因参考帮助文档中对该参数的描述。&lt;/li&gt;
+&lt;li&gt;如果放任不管，程序会不停地吃内存，并且占住不释放。我尝试让程序持续吃内存，最后稳定在3GB的物理内存（共4G）和2.6G的swap空间（共4G）的消耗。（但没有被oom killer干掉）&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;再琢磨琢磨吧。&lt;/p&gt;
+
+&lt;p&gt;最后，感谢我的同事cntrump。并附上《代码大全》里的一段话，我前些天重温的时候才看过：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;23.2 &lt;strong&gt;寻找缺陷&lt;/strong&gt; - &lt;em&gt;同他人讨论问题&lt;/em&gt;&lt;br /&gt;
+　　有人会把这种方法称之为“忏悔式调试”。当你向别人解释自己的程序时，常常能发现自己犯下的一些错误。举个例子，如果你向别人解释上面的关于薪水的例子，你或许会这样对别人说：&lt;br /&gt;
+　　嗨，jennifer，你有空么？我现在遇到一个麻烦。这张员工薪水列表本来应当是按照顺序排列的，但里面有些名字乱序了。我原本打算看看是不是新输入的名字就会这种情况，但有时是对的，有时又不是。我向这些数据在我输入他们的时候就应当被排序，因为程序会在我输入数据的时候对其排序，然后在数据保存的时候再排一遍。等一下，不对，它没有在输入数据的时候对其排序。就是这里。程序只是粗略地对这些数据进行了排序。谢谢你，jennifer，你帮了我个大忙。&lt;/p&gt;
+&lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>内核资源泄漏样本之一</title>
+      <link>http://boxcounter.com/technique/2012-11-02-%E5%86%85%E6%A0%B8%E8%B5%84%E6%BA%90%E6%B3%84%E6%BC%8F%E6%A0%B7%E6%9C%AC%E4%B9%8B%E4%B8%80/</link>
+      <pubDate>Fri, 02 Nov 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-11-02-%E5%86%85%E6%A0%B8%E8%B5%84%E6%BA%90%E6%B3%84%E6%BC%8F%E6%A0%B7%E6%9C%AC%E4%B9%8B%E4%B8%80/</guid>
+      <description>
+
+&lt;p&gt;又遇到一个很好玩的内核资源泄漏样本，分享一下。&lt;br /&gt;
+某台WinXP sp3系统出现了死机现象，该现象是在安装了我的驱动后才出现的，第一反应是“MD，怎么又泄漏了”。&lt;br /&gt;
+以下是分析过程：&lt;/p&gt;
+
+&lt;h1 id=&#34;poolused的输出&#34;&gt;!poolused的输出&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; !poolused 2
+
+Sorting by NonPaged Pool Consumed
+
+           NonPaged                  Paged
+Tag     Allocs         Used     Allocs         Used
+
+tsni     62403     33947232          0            0 UNKNOWN pooltag &#39;tsni&#39;, please update pooltag.txt
+FMvo     21652     21825376          0            0 FLT_VOLUME structure , Binary: fltmgr.sys
+SBcx     10828     11780864          0            0 UNKNOWN pooltag &#39;SBcx&#39;, please update pooltag.txt
+Devi     32861     10905648          0            0 Device objects 
+FMis     10841      6503328          0            0 FLT_INSTANCE structure , Binary: fltmgr.sys
+Drti     10844      5899136          0            0 UNKNOWN pooltag &#39;Drti&#39;, please update pooltag.txt
+FMrr     21682      2425184          0            0 Per-processor Cache-aware rundown ref structure , Binary: fltmgr.sys
+FMct     10841      2339864          0            0 TRACK_COMPLETION_NODES structure , Binary: fltmgr.sys
+Tef2       220      2242016          0            0 UNKNOWN pooltag &#39;Tef2&#39;, please update pooltag.txt
+WPSd       278      1677896          0            0 UNKNOWN pooltag &#39;WPSd&#39;, please update pooltag.txt
+MmCm        30       963440          0            0 Calls made to MmAllocateContiguousMemory , Binary: nt!mm
+Pp       10822       779184        287        33456 UNKNOWN pooltag &#39;Pp  &#39;, please update pooltag.txt
+DmaB        34       729088          0            0 UNKNOWN pooltag &#39;DmaB&#39;, please update pooltag.txt
+Io       16786       693632        156         6480 general IO allocations , Binary: nt!io
+Thre      1033       661120          0            0 Thread objects , Binary: nt!ps
+File      3038       465648          0            0 File objects 
+FMwi     10831       433240          0            0 Work item structures , Binary: fltmgr.sys
+iAEC       183       361992          0            0 UNKNOWN pooltag &#39;iAEC&#39;, please update pooltag.txt
+SEY4      2970       332752          0            0 UNKNOWN pooltag &#39;SEY4&#39;, please update pooltag.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可见fltmgr的卷相关资源占用特别严重（tag名以&amp;rdquo;FM&amp;rdquo;开头的几项，如&amp;rdquo;FMvo&amp;rdquo;和&amp;rdquo;FMi&amp;rdquo;等）&lt;br /&gt;
+fltmgr.sys是微软的文件过滤驱动，一般可以排除由它导致资源泄漏的可能性。于是想到可能是基于fltmgr的minifilter驱动引起此故障。&lt;br /&gt;
+于是继续列举系统中目前以存在的minifilter驱动。&lt;/p&gt;
+
+&lt;h1 id=&#34;fltkd-filters的输出&#34;&gt;!fltkd.filters的输出&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; !fltkd.filters
+
+Filter List: 8999805c &amp;quot;Frame 1&amp;quot; 
+   FLT_FILTER: 897e5ba8 &amp;quot;SEyeFilter&amp;quot; &amp;quot;382020&amp;quot;
+      FLT_INSTANCE: 89965510 &amp;quot;SEyeFilter - Top Instance&amp;quot; &amp;quot;382020&amp;quot;
+      FLT_INSTANCE: 89964b50 &amp;quot;SEyeFilter - Top Instance&amp;quot; &amp;quot;382020&amp;quot;
+   FLT_FILTER: 89e8be68 &amp;quot;SPBBCDrv&amp;quot; &amp;quot;365100&amp;quot;
+      FLT_INSTANCE: 89987420 &amp;quot;SPBBCDrv&amp;quot; &amp;quot;365100&amp;quot;
+      FLT_INSTANCE: 89984008 &amp;quot;SPBBCDrv&amp;quot; &amp;quot;365100&amp;quot;
+   FLT_FILTER: 89e4aba8 &amp;quot;eeCtrl&amp;quot; &amp;quot;329010&amp;quot;
+      FLT_INSTANCE: 89ec5c28 &amp;quot;eeCtrl&amp;quot; &amp;quot;329010&amp;quot;
+      FLT_INSTANCE: 899ba008 &amp;quot;eeCtrl&amp;quot; &amp;quot;329010&amp;quot;
+   FLT_FILTER: 89ab9568 &amp;quot;SRTSP&amp;quot; &amp;quot;329000&amp;quot;
+      FLT_INSTANCE: 89981de0 &amp;quot;SRTSP&amp;quot; &amp;quot;329000&amp;quot;
+      FLT_INSTANCE: 89982270 &amp;quot;SRTSP&amp;quot; &amp;quot;329000&amp;quot;
+      FLT_INSTANCE: 896dd780 &amp;quot;SRTSP&amp;quot; &amp;quot;329000&amp;quot;
+      FLT_INSTANCE: 896be9d8 &amp;quot;SRTSP&amp;quot; &amp;quot;329000&amp;quot;
+   FLT_FILTER: 893e0e30 &amp;quot;vfsmfd&amp;quot; &amp;quot;263410&amp;quot;
+      FLT_INSTANCE: 893f6008 &amp;quot;VEAI&amp;quot; &amp;quot;263400&amp;quot;
+      FLT_INSTANCE: 89649008 &amp;quot;VEAI&amp;quot; &amp;quot;263400&amp;quot;
+      FLT_INSTANCE: 895ee008 &amp;quot;VEAI&amp;quot; &amp;quot;263400&amp;quot;
+      FLT_INSTANCE: 895f0008 &amp;quot;VEAI&amp;quot; &amp;quot;263400&amp;quot;
+      FLT_INSTANCE: 893f67c0 &amp;quot;Default&amp;quot; &amp;quot;263410&amp;quot;
+   FLT_FILTER: 8971bb58 &amp;quot;WavxDMgr&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 89cf58b0 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 8997b400 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 896de608 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 896d7998 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 89230cf0 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 87018878 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 870076a8 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 87018b30 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 870032d0 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 8700e970 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 87003008 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 87003580 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 86fffdb0 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      FLT_INSTANCE: 86ff02d0 &amp;quot;WavxDMgr Instance&amp;quot; &amp;quot;145300&amp;quot;
+      ... 省略若干重复输出
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;发现WavxDmgr这个minifilter对卷设备进行了上万次的挂载（有上万条“FLT_INSTANCE: XXXXXXXX &amp;ldquo;WavxDMgr Instance&amp;rdquo; &amp;ldquo;145300&amp;rdquo;”），&lt;br /&gt;
+因此占用了大量的Nonpaged Pool资源。有理由猜测某种操作触发了WavxDmgr的BUG，导致它疯狂的进行挂载操作，最终导致系统资源耗尽而死机。&lt;/p&gt;
+
+&lt;p&gt;以“WavxDmgr”为关键字搜索，可以找到这么一篇文章：&lt;a href=&#34;http://www.novell.com/zh-cn/documentation/zenworks11/readme/data/readme_zenworks11sp2.html&#34;&gt;Novell ZENworks 11 SP2&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;其中有一段相关的说明：&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;p&gt;2.6.3 数据加密与 Tablet PC 上的 Dell ControlPoint Security Manager 不兼容&lt;br /&gt;
+如果将数据加密策略应用到使用 Dell ControlPoint Security Manager 的 Tablet PC，设备将无法重引导到操作系统。&lt;br /&gt;
+此问题是因 Dell ControlPoint Security Manager 驱动程序 (WavxDMgr.sys) 过渡使用文件系统堆栈所致。对于任何使用名称解析且晚于该安全管理器驱动程序装载的文件系统过滤器驱动程序，都可能会发生同样的结果。&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;而我的驱动正好符合“使用名称解析且晚于该安全管理器驱动程序装载的文件系统过滤器驱动程序”，于是触发了WavxDmgr的资源泄漏BUG。&lt;/p&gt;
+
+&lt;h1 id=&#34;验证&#34;&gt;验证&lt;/h1&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; !for_each_module s -a @#Base @#End &amp;quot;tsni&amp;quot;
+a7e0f300  74 73 6e 69 14 02 00 00-68 c9 54 80 50 c9 54 80  tsni....h.T.P.T.
+a7e10ba3  74 73 6e 69 68 14 02 00-00 53 53 53 68 e0 f2 e0  tsnih....SSSh...
+
+0: kd&amp;gt; lm a a7e0f300
+start    end        module name
+a7ddb000 a7e14180   WavxDMgr   (deferred)             
+
+0: kd&amp;gt; lm a a7e10ba3
+start    end        module name
+a7ddb000 a7e14180   WavxDMgr   (deferred)             
+
+0: kd&amp;gt; !for_each_module s -a @#Base @#End &amp;quot;SBcx&amp;quot;
+a7e0e114  53 42 63 78 00 00 00 00-00 00 00 00 00 00 00 00  SBcx............
+
+0: kd&amp;gt; lm a a7e0e114
+start    end        module name
+a7ddb000 a7e14180   WavxDMgr   (deferred)             
+
+0: kd&amp;gt; !for_each_module s -a @#Base @#End &amp;quot;Drti&amp;quot;
+a7dde5ad  44 72 74 69 68 18 02 00-00 6a 00 ff 15 e8 df e0  Drtih....j......
+
+0: kd&amp;gt; lm a a7dde5ad
+start    end        module name
+a7ddb000 a7e14180   WavxDMgr   (deferred)             
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;就是这厮！&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>有关STATUS_THREAD_IS_TERMINATING</title>
+      <link>http://boxcounter.com/technique/2012-10-16-%E6%9C%89%E5%85%B3STATUS_THREAD_IS_TERMINATING/</link>
+      <pubDate>Tue, 16 Oct 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-10-16-%E6%9C%89%E5%85%B3STATUS_THREAD_IS_TERMINATING/</guid>
+      <description>&lt;p&gt;手头有个驱动，因为客户需求的原因，只在x86的2k3和xp系统上做过测试，今天在把它往x64 win7系统移植的时候遇到这么一个问题：&lt;br /&gt;
+　　在PsSetCreateProcessNotifyRoutine注册的回调函数中，通过FltSendMessage发通知给应用层接收者。在发送“进程退出”事件时FltSendMessage总是会返回STATUS_THREAD_IS_TERMINATING（0xC000004B）。&lt;/p&gt;
+
+&lt;p&gt;　　琢磨了一会，找到了问题关键，分析过程如下：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;定位返回STATUS_THREAD_IS_TERMINATING的点&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;1: kd&amp;gt; pc
+fltmgr!FltSendMessage+0x1bf:
+fffff880`011a1ddf call    qword ptr [fltmgr!_imp_FsRtlCancellableWaitForMultipleObjects (fffff880`011a75c8)]
+
+1: kd&amp;gt; p
+fltmgr!FltSendMessage+0x1c5:
+fffff880`011a1de5 mov     ebx,eax
+
+1: kd&amp;gt; r eax
+eax=c000004b
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这里定位到在FltSendMessage函数中是FsRtlCancellableWaitForMultipleObjects这个函数返回的这个错误。&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;继续更细致的定位&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;...
+nt! ?? ::NNGAKEGL::`string&#39;+0xcb90:
+fffff800`0418d031 mov     rax,qword ptr gs:[188h]
+fffff800`0418d03a mov     ecx,dword ptr [rax+448h]
+fffff800`0418d040 test    cl,1
+fffff800`0418d043 jne     nt! ?? ::NNGAKEGL::`string&#39;+0xcc16 (fffff800`0418d0b7)
+...
+nt! ?? ::NNGAKEGL::`string&#39;+0xcc16:
+fffff800`0418d0b7 mov     eax,0C000004Bh
+fffff800`0418d0bc jmp     nt!FsRtlCancellableWaitForMultipleObjects+0x69 (fffff800`0416a271)
+...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;很幸运，就是FsRtlCancellableWaitForMultipleObjects这个函数返回的STATUS_THREAD_IS_TERMINATING。
+（有时候要深入好几层函数调用才能定位到错误码的直接返回者）&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;根据2中的汇编码，继续分析&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;1: kd&amp;gt; dp gs:[188h]
+002b:00000000`00000188  fffffa80`0d168b60 
+
+
+1: kd&amp;gt; !pool fffffa80`0d168b60  2 
+Pool page fffffa800d168b60 region is Nonpaged pool
+*fffffa800d168b00 size:  500 previous size:  280  (Allocated) *Thre (Protected)
+            Pooltag Thre : Thread objects, Binary : nt!ps
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;看来这个地址是个线程结构体。
+为了确认这个地址就是线程结构体的开头，再找个线程相关函数来看看吧：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; u nt!KeGetCurrentThread
+nt!PsGetCurrentThread:
+fffff800`03f23f40 mov   rax,qword ptr gs:[188h]
+fffff800`03f23f49 ret
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;那么不是kthread就是ethread，而汇编码中取值的偏移是0x448，前者大小不对，那看看后者的0x448是什么吧&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; 1 1: kd&amp;gt; dt nt!_ethread
+ 2 nt!_ETHREAD
+ 3    ...
+ 4    +0x448 CrossThreadFlags : Uint4B
+ 5    +0x448 Terminated       : Pos 0, 1 Bit
+ 6    +0x448 ThreadInserted   : Pos 1, 1 Bit
+ 7    +0x448 HideFromDebugger : Pos 2, 1 Bit
+ 8    +0x448 ActiveImpersonationInfo : Pos 3, 1 Bit
+ 9    +0x448 Reserved         : Pos 4, 1 Bit
+10    +0x448 HardErrorsAreDisabled : Pos 5, 1 Bit
+11    +0x448 BreakOnTermination : Pos 6, 1 Bit
+12    +0x448 SkipCreationMsg  : Pos 7, 1 Bit
+13    +0x448 SkipTerminationMsg : Pos 8, 1 Bit
+14    +0x448 CopyTokenOnOpen  : Pos 9, 1 Bit
+15    +0x448 ThreadIoPriority : Pos 10, 3 Bits
+16    +0x448 ThreadPagePriority : Pos 13, 3 Bits
+17    +0x448 RundownFail      : Pos 16, 1 Bit
+18    +0x448 NeedsWorkingSetAging : Pos 17, 1 Bit
+19  ...
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;对照着汇编码，可以知道在FsRtlCancellableWaitForMultipleObjects函数判断了当前线程的ethread::Terminated（行5）这个域，而在我的调试环境中该域是1，于是FsRtlCancellableWaitForMultipleObjects就返回了STATUS_THREAD_IS_TERMINATING。&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;　　到这里，已经弄清楚了在什么情况下会出现这个错误。那解决方案也很简单，不赘述。&lt;/p&gt;
+
+&lt;p&gt;　　另外，多说两句：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;这个特性是从vista开始引入。&lt;/li&gt;
+&lt;li&gt;目的是为了保证线程结束的处理过程中不被卡住。&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;　　参考资料：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://www.osronline.com/showThread.cfm?link=110848&#34;&gt; STATUS_THREAD_IS_TERMINATING returned by FltSendMessage&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>又一个内核资源泄漏样本</title>
+      <link>http://boxcounter.com/technique/2012-08-15-%E5%8F%88%E4%B8%80%E4%B8%AA%E5%86%85%E6%A0%B8%E8%B5%84%E6%BA%90%E6%B3%84%E6%BC%8F%E6%A0%B7%E6%9C%AC/</link>
+      <pubDate>Wed, 15 Aug 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-08-15-%E5%8F%88%E4%B8%80%E4%B8%AA%E5%86%85%E6%A0%B8%E8%B5%84%E6%BA%90%E6%B3%84%E6%BC%8F%E6%A0%B7%E6%9C%AC/</guid>
+      <description>&lt;p&gt;这两天在处理一个内核资源泄漏的问题，整个分析过程比较典型，记在这里以便以后参考。&lt;/p&gt;
+
+&lt;p&gt;　　这个问题发生在测试部同事的真实机上，于是抓内核DMP用的是sysinternals的livekd，命令行很简单：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;livekd -o dump-file-path
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　注：为了分析，我开了GFlags中的kernel pool tagging功能。&lt;/p&gt;
+
+&lt;p&gt;　　分析过程如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; 1 0: kd&amp;gt; !vm
+ 2 
+ 3 *** Virtual Memory Usage ***
+ 4  Physical Memory:      842859 (   3371,436 Kb)
+ 5  ...（Boxcounter：此处省略PagingFile相关输出）
+ 6  Available Pages:      582485 (   2329,940 Kb)
+ 7  ResAvail Pages:       756136 (   3024,544 Kb)
+ 8  Locked IO Pages:          51 (       204 Kb)
+ 9  Free System PTEs:      32523 (    130,092 Kb)
+10  Free NP PTEs:          32767 (    131,068 Kb)
+11  Free Special NP:       94800 (    379,200 Kb)[/font]
+12  Modified Pages:        17626 (     70,504 Kb)
+13  Modified PF Pages:     17131 (     68,524 Kb)
+14  NonPagedPool Usage:     4096 (     16,384 Kb) &amp;lt;&amp;lt;
+15  NonPagedPoolNx Usage:   5076 (     20,304 Kb)
+16  NonPagedPool Max:      65536 (    262,144 Kb)
+17  PagedPool 0 Usage:      7665 (     30,660 Kb)
+18  PagedPool 1 Usage:     16753 (     67,012 Kb)
+19  PagedPool 2 Usage:     16728 (     66,912 Kb)
+20  PagedPool 3 Usage:     16766 (     67,064 Kb)
+21  PagedPool 4 Usage:     16725 (     66,900 Kb)
+22  PagedPool Usage:       74637 (    298,548 Kb) &amp;lt;&amp;lt;
+23  PagedPool Maximum:     92160 (    368,640 Kb)
+24  Session Commit:         2095 (      8,380 Kb)
+25  Shared Commit:         13172 (     52,688 Kb)
+26  Special Pool:           1175 (      4,700 Kb)
+27  Shared Process:         3457 (     13,828 Kb)
+28  PagedPool Commit:      74583 (    298,332 Kb) &amp;lt;&amp;lt;
+29  Driver Commit:          3840 (     15,360 Kb)
+30  Committed pages:      196936 (    787,744 Kb)
+31  Commit limit:        2327741 (   9310,964 Kb)
+32 
+33  Total Private:         95118 (    380,472 Kb)
+34          0c40 procexp.exe      19592 (     78,368 Kb)
+35          0860 360Tray.exe      14027 (     56,108 Kb)
+36          070c svchost.exe      13336 (     53,344 Kb)
+37          068c explorer.exe      7362 (     29,448 Kb)
+38          08b8 XDict.exe         7102 (     28,408 Kb)
+39          0470 RTHDCPL.EXE       5785 (     23,140 Kb)
+40          075c svchost.exe       4462 (     17,848 Kb)
+41          06d4 SEye.exe          2513 (     10,052 Kb)
+42          03b8 winlogon.exe      1739 (      6,956 Kb)
+43          019c ZhuDongFangYu.e   1519 (      6,076 Kb)
+44          ... （Boxcounter：省略剩余不重要的进程信息）
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　这段输出需要关注的重点是第16、22和28行。&lt;br /&gt;
+　　看上去，nonpaged pool使用情况比较正常，主要嫌疑在paged pool上。&lt;br /&gt;
+　　看看paged pool吧。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; 1 0: kd&amp;gt; !poolused 5
+ 2    Sorting by  Paged Pool Consumed
+ 3 
+ 4   Pool Used:
+ 5             NonPaged                    Paged
+ 6  Tag    Allocs    Frees     Diff     Used   Allocs    Frees     Diff     Used
+ 7  prpt        0        0        0        0  4191169  1396976  2794193  203,976,160    UNKNOWN pooltag &#39;prpt&#39;, please update pooltag.txt
+ 8  otpu        0        0        0        0   349352       28   349324   30,269,696    UNKNOWN pooltag &#39;otpu&#39;, please update pooltag.txt
+ 9  INTC    38799    38410      389    95952  1355200  1352980     2220    9,142,856    Intel video driver 
+10  Gh05        0        0        0        0   561321   560728      593    4,213,584    GDITAG_HMGR_SPRITE_TYPE , Binary: win32k.sys
+11  UlHT        0        0        0        0        1        0        1    4,198,400    Hash Table , Binary: http.sys
+12  MmSt        0        0        0        0  1463662  1462178     1484    3,680,824    Mm section object prototype ptes , Binary: nt!mm
+13  VMON        2        0        2       72      648        0      648    2,646,432    Volume Manager , Binary: volmgr.sys
+14  CM35        0        0        0        0       39       13       26    2,629,632    Internal Configuration manager allocations , Binary: nt!cm
+15  Gcac        0        0        0        0      214      157       57    2,096,640    Gdi glyph cache 
+16  Ttfd        0        0        0        0     3713     3023      690    1,275,080    TrueType Font driver 
+17  Ifs   7166549  7166547        2      176  5361522  5360467     1055    1,131,376    Default file system allocations (user&#39;s of ntifs.h) 
+18  Ddk   9649715  9649684       31   931176     2684      790     1894    1,087,824    Default for driver allocated memory (user&#39;s of ntddk.h) 
+19  CMDa        0        0        0        0   216579   214244     2335      530,480    value data cache pool tag , Binary: nt!cm
+20  Ntff       18        0       18     3744    84222    83589      633      526,656    FCB_DATA , Binary: ntfs.sys
+21  Gla1        1        0        1      112     3961     3652      309      494,400    GDITAG_HMGR_LOOKASIDE_DC_TYPE , Binary: win32k.sys
+22  Gla5        1        0        1      112     7449     6223     1226      480,592    GDITAG_HMGR_LOOKASIDE_SURF_TYPE , Binary: win32k.sys
+23  logb        0        0        0        0     1959     1954        5      413,728    UNKNOWN pooltag &#39;logb&#39;, please update pooltag.txt
+24  pipt        0        0        0        0   353979   351340     2639      407,664    UNKNOWN pooltag &#39;pipt&#39;, please update pooltag.txt
+25  CM25        0        0        0        0      972      947       25      327,680    Internal Configuration manager allocations , Binary: nt!cm
+26  Obtb        0        0        0        0   362905   362778      127      315,376    object tables via EX handle.c , Binary: nt!ob
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　重点是第7、8行这两个windbg不认识的tag。绝大部分的paged pool内存都是它们的。看看它们是谁。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;C:\WINDOWS\system32\drivers&amp;gt;findstr /m /l prpt *sys
+qutmdrv.sys
+
+C:\WINDOWS\system32\drivers&amp;gt;findstr /m /l otpu *sys
+qutmdrv.sys
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　找到这个驱动，看了下属性，安全卫士的，该驱动的版本是7.2.1.1022。&lt;/p&gt;
+
+&lt;p&gt;　　&lt;img src=&#34;http://boxcounter.com/images/2012-08-15/pooltag.jpg&#34;/&gt;&lt;/p&gt;
+
+&lt;p&gt;　　分析到这里我想起之前看过的&lt;a href=&#34;http://www.cnblogs.com/ahuo/archive/2010/09/29/1838439.html&#34;&gt;一个类似的样例&lt;/a&gt;&lt;/p&gt;
+
+&lt;p&gt;　　现在找到了一个嫌疑人，为了确认没有误伤，卸掉我的驱动重启，等了10来分钟，看内存和cpu占用都稳定了，启动纯应用层测试工具做压力测试。&lt;br /&gt;
+　　在测试前抓了个dmp，当时状态是这样的：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; .time
+Debug session time: Wed Aug 15 10:37:44.500 2012 (UTC + 8:00)
+System Uptime: 0 days 0:13:07.406
+
+ 1 0: kd&amp;gt; !vm
+ 2 
+ 3 *** Virtual Memory Usage ***
+ 4  Physical Memory:      842859 (   3371436 Kb)
+ 5  ...（Boxcounter：此处省略PagingFile相关输出）
+ 6  Available Pages:      703681 (   2814,724 Kb)
+ 7  ResAvail Pages:       757240 (   3028,960 Kb)
+ 8  Locked IO Pages:          50 (       200 Kb)
+ 9  Free System PTEs:     104176 (    416,704 Kb)
+10  Free NP PTEs:          32767 (    131,068 Kb)
+11  Free Special NP:       95598 (    382,392 Kb)
+12  Modified Pages:         1698 (      6,792 Kb)
+13  Modified PF Pages:       545 (      2,180 Kb)
+14  NonPagedPool Usage:     4096 (     16,384 Kb) &amp;lt;&amp;lt;
+15  NonPagedPoolNx Usage:   3164 (     12,656 Kb)
+16  NonPagedPool Max:      65536 (    262,144 Kb)
+17  PagedPool 0 Usage:      8987 (     35,948 Kb)
+18  PagedPool 1 Usage:       934 (      3,736 Kb)
+19  PagedPool 2 Usage:       934 (      3,736 Kb)
+20  PagedPool 3 Usage:       923 (      3,692 Kb)
+21  PagedPool 4 Usage:       944 (      3,776 Kb)
+22  PagedPool Usage:       12722 (     50,888 Kb) &amp;lt;&amp;lt;
+23  PagedPool Maximum:     92160 (    368,640 Kb)
+24  Shared Commit:         11888 (     47,552 Kb)
+25  Special Pool:            273 (      1,092 Kb)
+26  Shared Process:         3503 (     14,012 Kb)
+27  PagedPool Commit:      12690 (     50,760 Kb) &amp;lt;&amp;lt;
+28  Driver Commit:          3807 (     15,228 Kb)
+29  Committed pages:      111988 (    447,952 Kb)
+30  Commit limit:        2327741 (   9310,964 Kb)
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　依然着重看第15、22和27行。&lt;/p&gt;
+
+&lt;p&gt;　　再重点看看两个嫌疑人的状态。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; !poolused 1 prpt
+   Sorting by  Tag
+
+  Pool Used:
+            NonPaged                    Paged
+Tag    Allocs    Frees     Diff     Used   Allocs    Frees     Diff     Used
+prpt        0        0        0        0     1081      296      785    57,376  UNKNOWN pooltag &#39;prpt&#39;, please update pooltag.txt
+otpu        0        0        0        0      184       30      154    11,104  UNKNOWN pooltag &#39;otpu&#39;, please update pooltag.txt
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　这个输出我做了一些调整，!poolused命令不支持同时查询多个tag，我使用了两次，然后把结果合并了。&lt;/p&gt;
+
+&lt;p&gt;　　看看经过几个小时的测试后的状态。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; .time
+Debug session time: Wed Aug 15 15:26:00.875 2012 (UTC + 8:00)
+System Uptime: 0 days 5:01:23.703
+
+ 1 0: kd&amp;gt; !vm
+ 2 
+ 3 *** Virtual Memory Usage ***
+ 4  Physical Memory:      842859 (   3,371,436 Kb)
+ 5     ...（Boxcounter：此处省略PagingFile相关输出）
+ 6  Available Pages:      604366 (   2,417,464 Kb)
+ 7  ResAvail Pages:       757320 (   3,029,280 Kb)
+ 8  Locked IO Pages:          50 (       200 Kb)
+ 9  Free System PTEs:     103840 (    415,360 Kb)
+10  Free NP PTEs:          32767 (    131,068 Kb)
+11  Free Special NP:       95604 (    382,416 Kb)
+12  Modified Pages:         1883 (      7,532 Kb)
+13  Modified PF Pages:       711 (      2,844 Kb)
+14  NonPagedPool Usage:     4096 (     16,384 Kb) &amp;lt;&amp;lt;
+15  NonPagedPoolNx Usage:   3144 (     12,576 Kb)
+16  NonPagedPool Max:      65536 (    262,144 Kb)
+17  PagedPool 0 Usage:      9867 (     39,468 Kb)
+18  PagedPool 1 Usage:     11069 (     44,276 Kb)
+19  PagedPool 2 Usage:     11059 (     44,236 Kb)
+20  PagedPool 3 Usage:     11054 (     44,216 Kb)
+21  PagedPool 4 Usage:     11077 (     44,308 Kb)
+22  PagedPool Usage:       54126 (    216,504 Kb) &amp;lt;&amp;lt;
+23  PagedPool Maximum:     92160 (    368,640 Kb)
+24  Session Commit:         2107 (      8,428 Kb)
+25  Shared Commit:         12882 (     51,528 Kb)
+26  Special Pool:            267 (      1,068 Kb)
+27  Shared Process:         3272 (     13,088 Kb)
+28  PagedPool Commit:      54058 (    216,232 Kb) &amp;lt;&amp;lt;
+29  Driver Commit:          3807 (     15,228 Kb)
+30  Committed pages:      163773 (    655,092 Kb)
+31  Commit limit:        2327741 (   9310,964 Kb)
+32 
+33  Total Private:         84063 (    336,252 Kb)
+34          061c 360Tray.exe      14005 (     56,020 Kb)
+35          0390 svchost.exe      13331 (     53,324 Kb)
+36          0460 explorer.exe     10689 (     42,756 Kb)
+37          0e18 procexp.exe       9525 (     38,100 Kb)
+38          0658 XDict.exe         6997 (     27,988 Kb)
+39          ...（Boxcounter：省略其余不重要输出）
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　再来看看tag情况。&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt; 1 0: kd&amp;gt; !poolused 5
+ 2    Sorting by  Paged Pool Consumed
+ 3 
+ 4   Pool Used:
+ 5             NonPaged                    Paged
+ 6  Tag    Allocs    Frees     Diff     Used   Allocs    Frees     Diff     Used
+ 7  prpt        0        0        0        0  2681313   893728  1787585 130,493,776 UNKNOWN pooltag &#39;prpt&#39;, please update pooltag.txt
+ 8  otpu        0        0        0        0   223536       32   223504  19,366,280 UNKNOWN pooltag &#39;otpu&#39;, please update pooltag.txt
+ 9  MmSt        0        0        0        0   740248   737979     2269  12,516,920 Mm section object prototype ptes , Binary: nt!mm
+10  INTC   289851   289462      389    95952  1200152  1197885     2267   9,146,056 Intel video driver 
+11  Gh05        0        0        0        0   350733   350137      596   4,870,704 GDITAG_HMGR_SPRITE_TYPE , Binary: win32k.sys
+12  UlHT        0        0        0        0        1        0        1   4,198,400 Hash Table , Binary: http.sys
+13  VMON        2        0        2       72      648        0      648   2,646,432 Volume Manager , Binary: volmgr.sys
+14  CM35        0        0        0        0       39       13       26   2,629,632 Internal Configuration manager allocations , Binary: nt!cm
+15  Gcac        0        0        0        0      343      277       66   2,356,704 Gdi glyph cache 
+16  Ttfd        0        0        0        0     5625     4930      695   1,313,168 TrueType Font driver 
+17  Ifs   3897847  3897844        3      240  3283105  3282050     1055   1,131,376 Default file system allocations (user&#39;s of ntifs.h) 
+18  Ddk    622677   622646       31   931176     2654      760     1894   1,087,824 Default for driver allocated memory (user&#39;s of ntddk.h) 
+19  Ntff       18        0       18     3744    19431    18491      940     782,080 FCB_DATA , Binary: ntfs.sys
+20  pipt        0        0        0        0   229268   226053     3215     499,136 UNKNOWN pooltag &#39;pipt&#39;, please update pooltag.txt
+21  ...（Boxcounter：省略其余不重要输出）
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　第7、8行验证了前面的判断。目前不太清楚这是qutmdrv.sys的资源泄漏BUG，还是它的缓存机制。（最开始的情况更严重是因为那时已经测试约莫11个小时，而后面这次测试时间较短）&lt;/p&gt;
+
+&lt;p&gt;　　分析过程不长，命令也就那么几个。不过确实耗了我不少时间，主要麻烦是问题不好重现和思维方式转不过弯（之前我的驱动正好刚出现过一次资源泄漏问题，所以这次一看到现象就​认为是我的驱动的问题……）。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>VS2010编译regex库的问题</title>
+      <link>http://boxcounter.com/technique/2012-05-31-VS2010%E7%BC%96%E8%AF%91regex%E5%BA%93%E7%9A%84%E9%97%AE%E9%A2%98/</link>
+      <pubDate>Thu, 31 May 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-05-31-VS2010%E7%BC%96%E8%AF%91regex%E5%BA%93%E7%9A%84%E9%97%AE%E9%A2%98/</guid>
+      <description>&lt;p&gt;今天把一些VS 2005工程升级到VS 2010，在升级过程中，遇到regex库编译错误。如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;error C2332: &#39;struct&#39; : missing tag name
+error C3306: &#39;regex::detail::&#39;: unnamed class template is not allowed
+error C2143: syntax error : missing &#39;;&#39; before &#39;static_assert&#39;
+error C2059: syntax error : &#39;;&#39;
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;　　出现该错误的代码来自restack.h，如下：&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #0000ff&#34;&gt;namespace&lt;/span&gt; detail
+{
+
+&lt;span style=&#34;color: #008000&#34;&gt;// For compile-time assertions that generate&lt;/span&gt;
+&lt;span style=&#34;color: #008000&#34;&gt;// no run-time overhead.&lt;/span&gt;
+&lt;span style=&#34;color: #0000ff&#34;&gt;template&lt;/span&gt;&amp;lt; &lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; f &amp;gt; &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;static_assert&lt;/span&gt;;
+&lt;span style=&#34;color: #0000ff&#34;&gt;template&lt;/span&gt;   &lt;span style=&#34;color: #0000ff&#34;&gt;struct&lt;/span&gt; &lt;span style=&#34;color: #0000ff&#34;&gt;static_assert&lt;/span&gt; { &lt;span style=&#34;color: #0000ff&#34;&gt;static_assert&lt;/span&gt;() {} };
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;　　该问题的原因是regex定义的static_assert模板与VS 2010的关键字冲突，将regex中的改名，比如改成_static_assert后就正常了。&lt;/p&gt;
+
+&lt;p&gt;　　参考资料：&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://social.msdn.microsoft.com/Forums/eu/vcgeneral/thread/56800d4b-eb9d-43c0-b06a-38c1ebb117bc&#34;&gt;Greta Parser and VS 2010&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>一个内核资源泄漏样本（待更新文中链接）</title>
+      <link>http://boxcounter.com/technique/2012-04-05-%E4%B8%80%E4%B8%AA%E5%86%85%E6%A0%B8%E8%B5%84%E6%BA%90%E6%B3%84%E6%BC%8F%E6%A0%B7%E6%9C%AC/</link>
+      <pubDate>Thu, 05 Apr 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-04-05-%E4%B8%80%E4%B8%AA%E5%86%85%E6%A0%B8%E8%B5%84%E6%BA%90%E6%B3%84%E6%BC%8F%E6%A0%B7%E6%9C%AC/</guid>
+      <description>&lt;p&gt;开发过程中，我习惯会一直开着verifier进行测试，绝大部分非逻辑错误都能被揪出来。&lt;br /&gt;
+这两天测试部的同事反馈说貌似驱动有资源泄漏，我第一反应是“不会吧，有资源泄漏verifer早崩了”。&lt;br /&gt;
+测试了一下，发现还真是驱动嫌疑最大，于是开启verifer和压力测试工具，跑了一会，停掉驱动。发现没有bsod，一脑子不理解。&lt;br /&gt;
+看了下驱动停止后，内核内存情况：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0: kd&amp;gt; !poolused 7
+   Sorting by  NonPaged Pool Consumed
+
+  Pool Used:
+            NonPaged                    Paged
+ Tag    Allocs    Frees     Diff     Used *  Allocs    Frees     Diff     Used
+ Proc    12980        1    12979  8618056 *       0        0        0        0  Process objects , Binary: nt!ps
+ LSwi        1        0        1  2576384 *       0        0        0        0  initial work context 
+ SePa   955604   942626    12978  2247904 *      17       16        1       16  Process audit image names and captured polity structures , Binary: nt!se
+ TCPt    47617    47580       37  1423848 *       1        1        0        0  TCP/IP network protocol , Binary: TCP
+ SeTd   372125   359104    13021   833344 *  372125   359104    13021  1145088  Security Token dynamic part , Binary: nt!se
+ .... 省略若干不相干信息
+ SEY6        0        0        0        0 *       1        1        0        0  UNKNOWN pooltag &#39;SEY6&#39;, please update pooltag.txt
+ SEYC  1448369  1448369        0        0 *       0        0        0        0  UNKNOWN pooltag &#39;SEYC&#39;, please update pooltag.txt
+ SEYB        0        0        0        0 *   47738    47738        0        0  UNKNOWN pooltag &#39;SEYB&#39;, please update pooltag.txt
+ SEY5        0        0        0        0 *       1        1        0        0  UNKNOWN pooltag &#39;SEY5&#39;, please update pooltag.txt
+ SEYA    46294    46294        0        0 *       0        0        0        0  UNKNOWN pooltag &#39;SEYA&#39;, please update pooltag.txt
+ SEY4  1186033  1186033        0        0 *       0        0        0        0  UNKNOWN pooltag &#39;SEY4&#39;, please update pooltag.txt
+ SEY3        1        1        0        0 *       1        1        0        0  UNKNOWN pooltag &#39;SEY3&#39;, please update pooltag.txt
+ SEY9        0        0        0        0 *   47008    47008        0        0  UNKNOWN pooltag &#39;SEY9&#39;, please update pooltag.txt
+ SEY2        0        0        0        0 *       1        1        0        0  UNKNOWN pooltag &#39;SEY2&#39;, please update pooltag.txt
+ SEY1        0        0        0        0 *   54507    54507        0        0  UNKNOWN pooltag &#39;SEY1&#39;, please update pooltag.txt
+ SEYD  1419958  1419958        0        0 *       0        0        0        0  UNKNOWN pooltag &#39;SEYD&#39;, please update pooltag.txt
+ .... 省略若干不相干信息
+ TOTAL    79306657 79234060    72597 22806272 38472704 38412253    60451 29841272
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;其中SEY?就是我的驱动使用的tag，发现没有泄漏，更一头雾水了。最后瞅到第一行，nnd，&amp;rsquo;Proc&amp;rsquo;这个tag明显有问题，基本没释放。&lt;br /&gt;
+检查了一下代码，发现之前从网上摘的一段获取进程路径的函数，里面的错误结束分支没有释放EPREOCESS和句柄……&lt;br /&gt;
+赶紧改掉了，这个bug存在了好多年啊，横跨我的几个驱动，之前从osr上摘下来的时候只是稍微调整了一下功能，没有再仔细审查……&lt;br /&gt;
+警钟警钟~&lt;br /&gt;
+有从我那篇&lt;a href=&#34;http://www.boxcounter.com/&#34;&gt;《驱动中获取进程完整路径名》（@TODO）&lt;/a&gt;里拷代码的朋友也赶紧更新吧，对不住大伙~&lt;/p&gt;
+
+&lt;p&gt;几点体会：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;别偷懒。不是自己写的代码更要仔细检查，哪怕出自osr这种权威级论坛。&lt;/li&gt;
+&lt;li&gt;verifer不是万能的（至少在win2k3之前的版本），别偷懒。&lt;/li&gt;
+&lt;li&gt;别偷懒。&lt;/li&gt;
+&lt;/ol&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>灵异现象？</title>
+      <link>http://boxcounter.com/technique/2012-03-04-%E7%81%B5%E5%BC%82%E7%8E%B0%E8%B1%A1%EF%BC%9F/</link>
+      <pubDate>Sun, 04 Mar 2012 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2012-03-04-%E7%81%B5%E5%BC%82%E7%8E%B0%E8%B1%A1%EF%BC%9F/</guid>
+      <description>&lt;p&gt;前两天遇到一个灵异现象，记录下来。&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;cchFullHeaderLen += strlen(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;Request-Line: &amp;quot;&lt;/span&gt;) +
+    strlen(pSessionData-&amp;gt;HttpOpenReq.lpszVerb) +
+    strlen(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot; &amp;quot;&lt;/span&gt;) +
+    strlen(pSessionData-&amp;gt;HttpOpenReq.lpszObjectName) +
+    (NULL != pSessionData-&amp;gt;HttpOpenReq.lpszVersion) ? (strlen(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot; &amp;quot;&lt;/span&gt;) + strlen(pSessionData-&amp;gt;HttpOpenReq.lpszVersion)) : 0 +
+    strlen(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;\r\n&amp;quot;&lt;/span&gt;);
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;调试的过程中发现，pSessionData-&amp;gt;HttpOpenReq.lpszVersion为NULL，但是依然会执行“(strlen(&amp;rdquo; &amp;ldquo;) + strlen(pSessionData-&amp;gt;HttpOpenReq.lpszVersion))”。&lt;/p&gt;
+
+&lt;p&gt;确认不是编码错误后，反汇编调试：&lt;/p&gt;
+
+&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;Boxr&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;MyFunction+0x2b2
+&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;6&lt;/span&gt;a515742  xor     edx,edx
+&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;6&lt;/span&gt;a515744  cmp     &lt;span style=&#34;color: #2b91af&#34;&gt;dword&lt;/span&gt; ptr [ecx+23Ch],0
+&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;6&lt;/span&gt;a51574b  setne   dl
+&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;6&lt;/span&gt;a51574e  add     esi,edx
+&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;6&lt;/span&gt;a515750  je      Boxr&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;MyFunction+0x2ed (6a51577d)
+&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;6&lt;/span&gt;a515752  push    offset Boxr&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;std::_Arithmetic_traits::_Rank+0xc88 (6a5fc0f8)
+&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;6&lt;/span&gt;a515757  call    Boxr&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;!&lt;/span&gt;strlen (6a5b5bd0)
+&lt;span style=&#34;border: 1px solid #FF0000&#34;&gt;6&lt;/span&gt;a51575c  add     esp,4
+&lt;/pre&gt;&lt;/div&gt;
+
+
+&lt;p&gt;其中ecx+23Ch就是pSessionData-&amp;gt;HttpOpenReq.lpszVersion，查看如下：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0:005&amp;gt; dd ecx+23c
+0a27b18c  00000000 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;确认pSessionData-&amp;gt;HttpOpenReq.lpszVersion确实为NULL。&lt;br /&gt;
+理论上6a515750处的跳转会执行的，但是没有。单步跟踪：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;0:005&amp;gt; p
+eax=00000014 ebx=00cc000c ecx=0a27af50 edx=00000000 esi=00000027 edi=0485d5ec
+eip=6a515744 esp=0485d518 ebp=0485d5f8 iopl=0         nv up ei pl zr na pe nc
+cs=001b  ss=0023  ds=0023  es=0023  fs=003b  gs=0000             efl=00000246
+Boxr!MyFunction+0x2b4:
+6a515744  cmp     dword ptr [ecx+23Ch],0 ds:0023:0a27b18c=00000000
+
+0:005&amp;gt; p
+eax=00000014 ebx=00cc000c ecx=0a27af50 edx=00000000 esi=00000027 edi=0485d5ec
+eip=6a51574b esp=0485d518 ebp=0485d5f8 iopl=0         nv up ei pl zr na pe nc
+cs=001b  ss=0023  ds=0023  es=0023  fs=003b  gs=0000             efl=00000246
+Boxr!MyFunction+0x2bb:
+6a51574b  setne   dl
+
+0:005&amp;gt; r zf
+zf=1
+
+0:005&amp;gt; p
+eax=00000014 ebx=00cc000c ecx=0a27af50 edx=00000000 esi=00000027 edi=0485d5ec
+eip=6a51574e esp=0485d518 ebp=0485d5f8 iopl=0         nv up ei pl zr na pe nc
+cs=001b  ss=0023  ds=0023  es=0023  fs=003b  gs=0000             efl=00000246
+Boxr!MyFunction+0x2be:
+6a51574e  add     esi,edx
+
+0:005&amp;gt; r zf
+zf=1
+
+0:005&amp;gt; p
+eax=00000014 ebx=00cc000c ecx=0a27af50 edx=00000000 esi=00000027 edi=0485d5ec
+eip=6a515750 esp=0485d518 ebp=0485d5f8 iopl=0         nv up ei pl nz na pe nc
+cs=001b  ss=0023  ds=0023  es=0023  fs=003b  gs=0000             efl=00000206
+Boxr!MyFunction+0x2c0:
+6a515750  je      Boxr!MyFunction+0x2ed (6a51577d) [br=0]
+
+0:005&amp;gt; r zf
+zf=0
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;可以看出，原本是准备要跳转的，但是&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;6a51574e  add     esi,edx
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;这条指令改变了zf寄存器，于是没有跳转。&lt;/p&gt;
+
+&lt;p&gt;那这条指令是干什么的呢？怎么会有这么一条指令？&lt;br /&gt;
+最开始怀疑是编译器优化出问题了。&lt;br /&gt;
+于是准备以发现编译器优化错误为主体写一篇BLOG。&lt;/p&gt;
+
+&lt;p&gt;但是在整理本文的过程中，仔细分析了一遍汇编代码，发现，丫是个低级错误 - 运算符优先级错误……&lt;br /&gt;
+实际上，C代码真正的执行逻辑是这样的：&lt;/p&gt;
+
+&lt;p&gt;&lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;cchFullHeaderLen += (strlen(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;Request-Line: &amp;quot;&lt;/span&gt;) + strlen(pSessionData-&amp;gt;HttpOpenReq.lpszVerb) + strlen(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot; &amp;quot;&lt;/span&gt;) + strlen(pSessionData-&amp;gt;HttpOpenReq.lpszObjectName) + (NULL != pSessionData-&amp;gt;HttpOpenReq.lpszVersion) ) 
+   ? (strlen(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot; &amp;quot;&lt;/span&gt;) + strlen(pSessionData-&amp;gt;HttpOpenReq.lpszVersion)) : ( 0 + strlen(&lt;span style=&#34;color: #a31515&#34;&gt;&amp;quot;\r\n&amp;quot;&lt;/span&gt;) );
+&lt;/pre&gt;&lt;/div&gt;
+&lt;/p&gt;
+
+&lt;p&gt;我的编码风格PPT又多了一条素材……&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

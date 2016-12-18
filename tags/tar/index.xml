@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Boxcounter的烂笔头</title>
+    <link>http://boxcounter.com/tags/tar/index.xml</link>
+    <description>Recent content on Boxcounter的烂笔头</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>zh-cn</language>
+    <atom:link href="http://boxcounter.com/tags/tar/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>macOS tar的特殊行为</title>
+      <link>http://boxcounter.com/technique/2016-11-26-macOS%20tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</link>
+      <pubDate>Sat, 26 Nov 2016 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/technique/2016-11-26-macOS%20tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</guid>
+      <description>&lt;p&gt;这周在编写自动部署脚本的过程遇到一个有趣的问题 —— 我把脚本打包成tgz文件，然后scp到被部署服务器上。解压之后发现多出来好些隐藏文件。比如下面的行1和行3：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ ls ./init/letsencrypt/keys/
+._0000_key-certbot.pem
+0000_key-certbot.pem
+._0000_key-letsencrypt.pem
+0000_key-letsencrypt.pem
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;一开始我以为是系统自动生成的类似.DS_Store这样的系统文件，但&lt;code&gt;ls -al&lt;/code&gt;看了下源目录，并没有发现踪迹。然后在本机（macOS）上把tgz文件&lt;code&gt;tar zxvf&lt;/code&gt;出来，也没有发现这些文件的存在。&lt;/p&gt;
+
+&lt;p&gt;一头雾水。于是google「tar dot file」，找到了答案：&lt;/p&gt;
+
+&lt;p&gt;macOS自带的tar在打包过程中创建了这些隐藏文件，用于保存被打包文件的扩展属性，解包时会用隐藏文件中的数据重建扩展属性。ubuntu下的tar则不具备这个特性，会将隐藏文件原样解包出来。&lt;/p&gt;
+
+&lt;p&gt;可以通过&lt;code&gt;ls -le@ *&lt;/code&gt;来查看扩展属性：&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ /bin/ls -le@ ./init/letsencrypt/keys/
+total 56
+-rw-------@ 1 Boxcounter  staff  1708 Nov 16 12:26 0000_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0000_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0001_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0001_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0002_key-certbot.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0002_key-letsencrypt.pem
+	com.apple.quarantine	  17
+-rw-------@ 1 Boxcounter  staff  1704 Nov 16 12:26 0003_key-letsencrypt.pem
+	com.apple.quarantine	  17
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;解决方法有两种：&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;设置环境变量COPYFILE_DISABLE禁用tar的这个行为：&lt;code&gt;export COPYFILE_DISABLE=1&lt;/code&gt;&lt;/li&gt;
+&lt;li&gt;改用gnu tar：&lt;code&gt;brew install gnu-tar --with-default-names&lt;/code&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;参考资料：&lt;a href=&#34;http://superuser.com/a/61188&#34;&gt;Why do I get files like ._foo in my tarball on OS X?&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>

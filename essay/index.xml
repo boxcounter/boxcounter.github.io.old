@@ -1,1082 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Essays on Boxcounter的烂笔头</title>
-    <link>http://boxcounter.com/essay/</link>
-    <description>Recent content in Essays on Boxcounter的烂笔头</description>
+    <title>Essay-rsses on Boxcounter的烂笔头</title>
+    <link>http://boxcounter.com/essay/index.xml</link>
+    <description>Recent content in Essay-rsses on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
-    <lastBuildDate>Sat, 04 Jun 2016 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sat, 25 Jan 2014 00:00:00 +0000</lastBuildDate>
     <atom:link href="http://boxcounter.com/essay/index.xml" rel="self" type="application/rss+xml" />
-    
-    <item>
-      <title>《逻辑思维，只要五步》读书笔记</title>
-      <link>http://boxcounter.com/essay/2016-06-04-%E9%80%BB%E8%BE%91%E6%80%9D%E7%BB%B4%EF%BC%8C%E5%8F%AA%E8%A6%81%E4%BA%94%E6%AD%A5/</link>
-      <pubDate>Sat, 04 Jun 2016 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2016-06-04-%E9%80%BB%E8%BE%91%E6%80%9D%E7%BB%B4%EF%BC%8C%E5%8F%AA%E8%A6%81%E4%BA%94%E6%AD%A5/</guid>
-      <description>&lt;p&gt;这本书于我而言，乏善可陈。原本30页能说清楚的方法论，絮絮叨叨成了230页的册子。
-勉强凑出这么一篇读书笔记。&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2016-06-04/逻辑思维，只要五步.png&#34;/&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2016-06-04/%e9%80%bb%e8%be%91%e6%80%9d%e7%bb%b4%ef%bc%8c%e5%8f%aa%e8%a6%81%e4%ba%94%e6%ad%a5.mindnode.zip&#34;&gt;逻辑思维，只要五步.mindnode&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>书单</title>
-      <link>http://boxcounter.com/essay/2016-04-16-%E4%B9%A6%E5%8D%95/</link>
-      <pubDate>Sat, 04 Jun 2016 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2016-04-16-%E4%B9%A6%E5%8D%95/</guid>
-      <description>
-
-&lt;p&gt;记录我读完的书，从2014年开始记录，每月起始更新上月读的书。主要记录有点厚度的，薄手册和零散资料不记。&lt;/p&gt;
-
-&lt;h3 id=&#34;分类:1e8b7b8c3446dda946ced66bc8617566&#34;&gt;分类&lt;/h3&gt;
-
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;评分&lt;/th&gt;
-&lt;th&gt;简述&lt;/th&gt;
-&lt;th&gt;举例&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;9~10&lt;/td&gt;
-&lt;td&gt;经典书籍，值得反复阅读&lt;/td&gt;
-&lt;td&gt;《史记》(10)、《TCP/IP详解》(10)&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;7~8&lt;/td&gt;
-&lt;td&gt;好书，可能再读&lt;/td&gt;
-&lt;td&gt;《大秦帝国》、《明朝那些事儿》、二月河的康雍乾&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;5~6&lt;/td&gt;
-&lt;td&gt;读完有点收获，应该不会再读&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h3 id=&#34;2016年:1e8b7b8c3446dda946ced66bc8617566&#34;&gt;2016年&lt;/h3&gt;
-
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;序号&lt;/th&gt;
-&lt;th&gt;书名&lt;/th&gt;
-&lt;th&gt;作译编者&lt;/th&gt;
-&lt;th&gt;读毕日期&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;评分&lt;/th&gt;
-&lt;th&gt;其他&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;1&lt;/td&gt;
-&lt;td&gt;《布局天下：中国古代军事地理大势》&lt;/td&gt;
-&lt;td&gt;饶胜文&lt;/td&gt;
-&lt;td&gt;01-12&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;2&lt;/td&gt;
-&lt;td&gt;《中国与中国人影像》&lt;/td&gt;
-&lt;td&gt;John Thomson&lt;/td&gt;
-&lt;td&gt;01-25&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;3&lt;/td&gt;
-&lt;td&gt;《壹玖壹壹：从鸦片战争到军阀混战的百年影像史》&lt;/td&gt;
-&lt;td&gt;刘香成&lt;/td&gt;
-&lt;td&gt;01-31&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;4&lt;/td&gt;
-&lt;td&gt;《中国历史风云录》&lt;/td&gt;
-&lt;td&gt;陈舜臣&lt;/td&gt;
-&lt;td&gt;01-31&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;5&lt;/td&gt;
-&lt;td&gt;《古董局中局》&lt;/td&gt;
-&lt;td&gt;马伯庸&lt;/td&gt;
-&lt;td&gt;02-09&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;6&lt;/td&gt;
-&lt;td&gt;《古董局中局：清明上河图之谜》&lt;/td&gt;
-&lt;td&gt;马伯庸&lt;/td&gt;
-&lt;td&gt;02-10&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;7&lt;/td&gt;
-&lt;td&gt;《古董局中局：掠宝清单》&lt;/td&gt;
-&lt;td&gt;马伯庸&lt;/td&gt;
-&lt;td&gt;02-15&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;8&lt;/td&gt;
-&lt;td&gt;《当历史可以观看》&lt;/td&gt;
-&lt;td&gt;冯克力&lt;/td&gt;
-&lt;td&gt;02-15&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;9&lt;/td&gt;
-&lt;td&gt;《一本书读懂中国税》&lt;/td&gt;
-&lt;td&gt;言谭&lt;/td&gt;
-&lt;td&gt;02-23&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;a href=&#34;http://boxcounter.com/essay/2016-02-23-%E4%B8%80%E6%9C%AC%E4%B9%A6%E8%AF%BB%E6%87%82%E4%B8%AD%E5%9B%BD%E7%A8%8E/&#34;&gt;笔记&lt;/a&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;10&lt;/td&gt;
-&lt;td&gt;《古董局中局：大结局》&lt;/td&gt;
-&lt;td&gt;马伯庸&lt;/td&gt;
-&lt;td&gt;02-26&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;11&lt;/td&gt;
-&lt;td&gt;《经济学原理：微观经济学》&lt;/td&gt;
-&lt;td&gt;N.Gregory Mankiw&lt;/td&gt;
-&lt;td&gt;04-16&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;a href=&#34;http://boxcounter.com/essay/2016-04-16-%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8e%9f%e7%90%86%ef%bc%9a%e5%be%ae%e8%a7%82%e7%bb%8f%e6%b5%8e%e5%ad%a6/&#34;&gt;笔记&lt;/a&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;12&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第29卷 元和中兴·牛李党争）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;04-20&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;13&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第30卷 甘露事变·大中之治）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;04-28&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;14&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第31卷 黄巢民变·狼虎谷）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;05-01&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;15&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第32卷 军阀混战·大黑暗）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;05-04&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;16&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第33卷 五代时代·小分裂）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;05-09&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;17&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第34卷 千里白骨·半截英雄）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;05-13&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;18&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第35卷 儿皇帝·横挑强邻）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;05-17&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;19&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第36卷 高平之战·分裂尾声）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;05-21&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;20&lt;/td&gt;
-&lt;td&gt;《逻辑思维，只要五步》&lt;/td&gt;
-&lt;td&gt;下地宽也&lt;/td&gt;
-&lt;td&gt;06-02&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;a href=&#34;http://boxcounter.com/essay/2016-06-04-%e9%80%bb%e8%be%91%e6%80%9d%e7%bb%b4%ef%bc%8c%e5%8f%aa%e8%a6%81%e4%ba%94%e6%ad%a5/&#34;&gt;笔记&lt;/a&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;!-- 陈志武《金融的逻辑》 --&gt;
-
-&lt;!-- 茅于轼《生活中的经济学》 --&gt;
-
-&lt;!-- 许小年《从来就没有救世主》 --&gt;
-
-&lt;!-- 薛兆丰《经济学通识》 --&gt;
-
-&lt;!-- 索维尔《诡辩与真相——经济学入门》 --&gt;
-
-&lt;!-- 贝克尔《生活中的经济学》 --&gt;
-
-&lt;!-- 弗里德曼《资本主义与自由》 --&gt;
-
-&lt;!-- 系统的： --&gt;
-
-&lt;!-- 穆雷·N. 罗斯巴德《人、经济与国家》 --&gt;
-
-&lt;!-- 茅于轼和岑科合著的《人文经济学》 --&gt;
-
-&lt;!-- 张五常的《经济解释》 --&gt;
-
-&lt;!-- 保罗·海恩等人著的《经济学的思维方式》 --&gt;
-
-&lt;!-- 米塞斯的《人的行动》 --&gt;
-
-&lt;!-- https://mp.weixin.qq.com/s?__biz=MjM5NjQ3MDMxMA==&amp;mid=217884728&amp;idx=3&amp;sn=fc915e09648c48e5d81e4cf3358a0ee2&amp;key=af154fdc40fed003c8a2d3d70a5d4cc787e6c79bb83dc3f8c15b882ae7ff4bcd5aa5192904537e33e0b97e4a4d33ad06&amp;ascene=1&amp;uin=NjQ4OTk1NTQy&amp;devicetype=iPhone+OS8.3&amp;version=16020211&amp;nettype=WIFI&amp;fontScale=109&amp;pass_ticket=OnHOxL02jchDp082n6Y3fvFh8AE3PugSmpcuxtd3exPO2C%2F5xaRWrihNM3tYEQFX --&gt;
-
-&lt;h3 id=&#34;2015年:1e8b7b8c3446dda946ced66bc8617566&#34;&gt;2015年&lt;/h3&gt;
-
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;序号&lt;/th&gt;
-&lt;th&gt;书名&lt;/th&gt;
-&lt;th&gt;作译编者&lt;/th&gt;
-&lt;th&gt;读毕日期&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;评分&lt;/th&gt;
-&lt;th&gt;其他&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;1&lt;/td&gt;
-&lt;td&gt;《南渡北归：南渡（上）》&lt;/td&gt;
-&lt;td&gt;岳南&lt;/td&gt;
-&lt;td&gt;01-13&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;2&lt;/td&gt;
-&lt;td&gt;《浪潮之巅(第2版)（上）》&lt;/td&gt;
-&lt;td&gt;吴军&lt;/td&gt;
-&lt;td&gt;01-27&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;3&lt;/td&gt;
-&lt;td&gt;《南渡北归：南渡（下）》&lt;/td&gt;
-&lt;td&gt;岳南&lt;/td&gt;
-&lt;td&gt;01-29&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;4&lt;/td&gt;
-&lt;td&gt;《南渡北归：北归（上）》&lt;/td&gt;
-&lt;td&gt;岳南&lt;/td&gt;
-&lt;td&gt;02-07&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;5&lt;/td&gt;
-&lt;td&gt;《南渡北归：北归（下）》&lt;/td&gt;
-&lt;td&gt;岳南&lt;/td&gt;
-&lt;td&gt;02-16&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;6&lt;/td&gt;
-&lt;td&gt;《南渡北归：离别（上）》&lt;/td&gt;
-&lt;td&gt;岳南&lt;/td&gt;
-&lt;td&gt;02-19&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;7&lt;/td&gt;
-&lt;td&gt;《南渡北归：离别（下）》&lt;/td&gt;
-&lt;td&gt;岳南&lt;/td&gt;
-&lt;td&gt;03-01&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;8&lt;/td&gt;
-&lt;td&gt;《失控》&lt;/td&gt;
-&lt;td&gt;Kevin Kelly&lt;/td&gt;
-&lt;td&gt;04-06&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;9&lt;/td&gt;
-&lt;td&gt;《浪潮之巅(第2版)（下）》&lt;/td&gt;
-&lt;td&gt;吴军&lt;/td&gt;
-&lt;td&gt;04-08&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;10&lt;/td&gt;
-&lt;td&gt;《饥饿的盛世》&lt;/td&gt;
-&lt;td&gt;张宏杰&lt;/td&gt;
-&lt;td&gt;04-12&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;11&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第25卷 恐怖世界·恶妻恶女）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;04-28&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;12&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第26卷 开元盛世·范阳兵变）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;05-11&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;13&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第27卷 睢阳之围·皇后失踪）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;05-20&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;14&lt;/td&gt;
-&lt;td&gt;《文明之光（上）》&lt;/td&gt;
-&lt;td&gt;吴军&lt;/td&gt;
-&lt;td&gt;06-02&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;15&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第28卷 泾原兵变·猪皇帝）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;06-04&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;16&lt;/td&gt;
-&lt;td&gt;《投机者的扑克》&lt;/td&gt;
-&lt;td&gt;扁虫鱼&lt;/td&gt;
-&lt;td&gt;06-16&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;17&lt;/td&gt;
-&lt;td&gt;《三体》&lt;/td&gt;
-&lt;td&gt;刘慈欣&lt;/td&gt;
-&lt;td&gt;06-23&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;18&lt;/td&gt;
-&lt;td&gt;《炒股的智慧》&lt;/td&gt;
-&lt;td&gt;陈江挺&lt;/td&gt;
-&lt;td&gt;06-29&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;19&lt;/td&gt;
-&lt;td&gt;《文明之光（中）》&lt;/td&gt;
-&lt;td&gt;吴军&lt;/td&gt;
-&lt;td&gt;07-03&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;20&lt;/td&gt;
-&lt;td&gt;《三体：黑暗森林》&lt;/td&gt;
-&lt;td&gt;刘慈欣&lt;/td&gt;
-&lt;td&gt;07-07&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;21&lt;/td&gt;
-&lt;td&gt;《一课经济学》&lt;/td&gt;
-&lt;td&gt;Henry Hazlitt&lt;/td&gt;
-&lt;td&gt;07-14&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;22&lt;/td&gt;
-&lt;td&gt;《怦然心动的人生整理魔法》&lt;/td&gt;
-&lt;td&gt;近藤麻理惠&lt;/td&gt;
-&lt;td&gt;07-14&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;23&lt;/td&gt;
-&lt;td&gt;《三体：死神永生》&lt;/td&gt;
-&lt;td&gt;刘慈欣&lt;/td&gt;
-&lt;td&gt;07-17&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;24&lt;/td&gt;
-&lt;td&gt;《怦然心动的人生整理魔法2》&lt;/td&gt;
-&lt;td&gt;近藤麻理惠&lt;/td&gt;
-&lt;td&gt;07-22&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;25&lt;/td&gt;
-&lt;td&gt;《茶艺师：基础知识》&lt;/td&gt;
-&lt;td&gt;陈文华&lt;/td&gt;
-&lt;td&gt;07-28&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;26&lt;/td&gt;
-&lt;td&gt;《曾国藩：血祭》&lt;/td&gt;
-&lt;td&gt;唐浩明&lt;/td&gt;
-&lt;td&gt;08-07&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;27&lt;/td&gt;
-&lt;td&gt;《从来就没有救世主》&lt;/td&gt;
-&lt;td&gt;许小年&lt;/td&gt;
-&lt;td&gt;08-08&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;a href=&#34;http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/&#34;&gt;笔记&lt;/a&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;28&lt;/td&gt;
-&lt;td&gt;《曾国藩：野焚》&lt;/td&gt;
-&lt;td&gt;唐浩明&lt;/td&gt;
-&lt;td&gt;08-14&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;29&lt;/td&gt;
-&lt;td&gt;《文明之光（下）》&lt;/td&gt;
-&lt;td&gt;吴军&lt;/td&gt;
-&lt;td&gt;08-18&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;30&lt;/td&gt;
-&lt;td&gt;《曾国藩：黑雨》&lt;/td&gt;
-&lt;td&gt;唐浩明&lt;/td&gt;
-&lt;td&gt;08-26&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;31&lt;/td&gt;
-&lt;td&gt;《真实世界的经济学》&lt;/td&gt;
-&lt;td&gt;周其仁&lt;/td&gt;
-&lt;td&gt;09-09&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;a href=&#34;http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/&#34;&gt;笔记&lt;/a&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;32&lt;/td&gt;
-&lt;td&gt;《大明王朝的七张面孔》&lt;/td&gt;
-&lt;td&gt;张宏杰&lt;/td&gt;
-&lt;td&gt;09-09&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;33&lt;/td&gt;
-&lt;td&gt;《白门柳：夕阳芳草》&lt;/td&gt;
-&lt;td&gt;刘斯奋&lt;/td&gt;
-&lt;td&gt;09-17&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;34&lt;/td&gt;
-&lt;td&gt;《费城风云：美国宪法的诞生和我们的反思》&lt;/td&gt;
-&lt;td&gt;易中天&lt;/td&gt;
-&lt;td&gt;09-23&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;35&lt;/td&gt;
-&lt;td&gt;《白门柳：秋露危城》&lt;/td&gt;
-&lt;td&gt;刘斯奋&lt;/td&gt;
-&lt;td&gt;09-24&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;36&lt;/td&gt;
-&lt;td&gt;《白门柳：鸡鸣风雨》&lt;/td&gt;
-&lt;td&gt;刘斯奋&lt;/td&gt;
-&lt;td&gt;10-20&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;37&lt;/td&gt;
-&lt;td&gt;《不要因为走得太远而忘记为什么出发》&lt;/td&gt;
-&lt;td&gt;徐泓&lt;/td&gt;
-&lt;td&gt;10-29&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;38&lt;/td&gt;
-&lt;td&gt;《悠悠南北朝：宋齐北魏的纷争史》&lt;/td&gt;
-&lt;td&gt;陈羡&lt;/td&gt;
-&lt;td&gt;11-16&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;39&lt;/td&gt;
-&lt;td&gt;《悠悠南北朝：三国归隋的统一路》&lt;/td&gt;
-&lt;td&gt;陈羡&lt;/td&gt;
-&lt;td&gt;12-07&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;40&lt;/td&gt;
-&lt;td&gt;《纵横十六国》&lt;/td&gt;
-&lt;td&gt;陈羡&lt;/td&gt;
-&lt;td&gt;12-31&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-
-&lt;h3 id=&#34;2014年:1e8b7b8c3446dda946ced66bc8617566&#34;&gt;2014年&lt;/h3&gt;
-
-&lt;table&gt;
-&lt;thead&gt;
-&lt;tr&gt;
-&lt;th&gt;序号&lt;/th&gt;
-&lt;th&gt;书名&lt;/th&gt;
-&lt;th&gt;作译编者&lt;/th&gt;
-&lt;th&gt;读毕日期&lt;/th&gt;
-&lt;th align=&#34;right&#34;&gt;评分&lt;/th&gt;
-&lt;th&gt;其他&lt;/th&gt;
-&lt;/tr&gt;
-&lt;/thead&gt;
-
-&lt;tbody&gt;
-&lt;tr&gt;
-&lt;td&gt;1&lt;/td&gt;
-&lt;td&gt;《代码大全》&lt;/td&gt;
-&lt;td&gt;Steve McConnell&lt;/td&gt;
-&lt;td&gt;1月&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
-&lt;td&gt;3rd&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;2&lt;/td&gt;
-&lt;td&gt;《高效程序员的45个习惯：敏捷开发修炼之道》&lt;/td&gt;
-&lt;td&gt;Venkat Subramaniam / Andy Hunt&lt;/td&gt;
-&lt;td&gt;1月&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;3&lt;/td&gt;
-&lt;td&gt;《黑客与画家》&lt;/td&gt;
-&lt;td&gt;Paul Graham&lt;/td&gt;
-&lt;td&gt;2月&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;4&lt;/td&gt;
-&lt;td&gt;《代码的未来》&lt;/td&gt;
-&lt;td&gt;松本行弘&lt;/td&gt;
-&lt;td&gt;2月&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;5&lt;/td&gt;
-&lt;td&gt;《MacTalk·人生元编程（纸版）》&lt;/td&gt;
-&lt;td&gt;池建强&lt;/td&gt;
-&lt;td&gt;2月&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;6&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;0101刘宋， 0301陈后主即将上台&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;7&lt;/td&gt;
-&lt;td&gt;《给你一个团队，你能怎么管？》&lt;/td&gt;
-&lt;td&gt;赵伟&lt;/td&gt;
-&lt;td&gt;03-07&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;5&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;8&lt;/td&gt;
-&lt;td&gt;《程序员的职业素养》&lt;/td&gt;
-&lt;td&gt;Robert C.Martin&lt;/td&gt;
-&lt;td&gt;03-14&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;9&lt;/td&gt;
-&lt;td&gt;《殷商玛雅征服史》&lt;/td&gt;
-&lt;td&gt;马伯庸&lt;/td&gt;
-&lt;td&gt;03-24&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;5&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;10&lt;/td&gt;
-&lt;td&gt;《关键对话：如何高效能沟通》&lt;/td&gt;
-&lt;td&gt;Kerry Patterson/Joseph Grenny/Ron McMillan&lt;/td&gt;
-&lt;td&gt;03-26&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;11&lt;/td&gt;
-&lt;td&gt;《简约至上》&lt;/td&gt;
-&lt;td&gt;Giles Colborne&lt;/td&gt;
-&lt;td&gt;04-01&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;12&lt;/td&gt;
-&lt;td&gt;《帝国最后的荣耀》&lt;/td&gt;
-&lt;td&gt;马伯庸/汗青&lt;/td&gt;
-&lt;td&gt;04-07&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;13&lt;/td&gt;
-&lt;td&gt;《浪潮之巅（第一版）》&lt;/td&gt;
-&lt;td&gt;吴军&lt;/td&gt;
-&lt;td&gt;04-17&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;14&lt;/td&gt;
-&lt;td&gt;《项目管理修炼之道》&lt;/td&gt;
-&lt;td&gt;Johanna Rothman&lt;/td&gt;
-&lt;td&gt;04-27&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;15&lt;/td&gt;
-&lt;td&gt;《Android开发精要》&lt;/td&gt;
-&lt;td&gt;范怀宇&lt;/td&gt;
-&lt;td&gt;05-15&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;16&lt;/td&gt;
-&lt;td&gt;《代码整洁之道》&lt;/td&gt;
-&lt;td&gt;Robert C.Martin&lt;/td&gt;
-&lt;td&gt;05-21&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;17&lt;/td&gt;
-&lt;td&gt;《三国机密》&lt;/td&gt;
-&lt;td&gt;马伯庸&lt;/td&gt;
-&lt;td&gt;05-30&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;18&lt;/td&gt;
-&lt;td&gt;《我读书少你可别骗我》&lt;/td&gt;
-&lt;td&gt;马伯庸&lt;/td&gt;
-&lt;td&gt;06-03&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;5&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;19&lt;/td&gt;
-&lt;td&gt;《精益开发实战》&lt;/td&gt;
-&lt;td&gt;Henrik Kniberg&lt;/td&gt;
-&lt;td&gt;06-24&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;20&lt;/td&gt;
-&lt;td&gt;《鬼吹灯（全）》&lt;/td&gt;
-&lt;td&gt;天下霸唱&lt;/td&gt;
-&lt;td&gt;06-29&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;21&lt;/td&gt;
-&lt;td&gt;《重来:更为简单有效的商业思维》&lt;/td&gt;
-&lt;td&gt;Jason Fried/David Heinemeier Hansson&lt;/td&gt;
-&lt;td&gt;07-03&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;22&lt;/td&gt;
-&lt;td&gt;《悟空传·完美纪念版》&lt;/td&gt;
-&lt;td&gt;今何在&lt;/td&gt;
-&lt;td&gt;07-03&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;23&lt;/td&gt;
-&lt;td&gt;《风起陇西》&lt;/td&gt;
-&lt;td&gt;马伯庸&lt;/td&gt;
-&lt;td&gt;07-07&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;24&lt;/td&gt;
-&lt;td&gt;《一座城池》&lt;/td&gt;
-&lt;td&gt;韩寒&lt;/td&gt;
-&lt;td&gt;07-11&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;6&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;25&lt;/td&gt;
-&lt;td&gt;《人月神话（32周年中文纪念版）》&lt;/td&gt;
-&lt;td&gt;Frederick P.Brooks.Jr&lt;/td&gt;
-&lt;td&gt;07-14&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;26&lt;/td&gt;
-&lt;td&gt;《程序员的思维修炼》&lt;/td&gt;
-&lt;td&gt;Andy Hunt&lt;/td&gt;
-&lt;td&gt;07-21&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;27&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第21卷 突厥可汗·南北统一）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;08-03&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;28&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第22卷 官逼民反·江都政变）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;08-17&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;29&lt;/td&gt;
-&lt;td&gt;《参与感》&lt;/td&gt;
-&lt;td&gt;黎万强&lt;/td&gt;
-&lt;td&gt;08-22&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;30&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第23卷 玄武门·贞观之治）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;09-02&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;31&lt;/td&gt;
-&lt;td&gt;《柏杨版资治通鉴（第24卷 黄金时代·武后夺权）》&lt;/td&gt;
-&lt;td&gt;司马光/柏杨&lt;/td&gt;
-&lt;td&gt;09-07&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;10&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;32&lt;/td&gt;
-&lt;td&gt;《南明那些事儿》&lt;/td&gt;
-&lt;td&gt;洪兵&lt;/td&gt;
-&lt;td&gt;09-18&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;33&lt;/td&gt;
-&lt;td&gt;《敏捷软件开发——原则、模式与实践作者》&lt;/td&gt;
-&lt;td&gt;Robert C·Martin&lt;/td&gt;
-&lt;td&gt;09-21&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;34&lt;/td&gt;
-&lt;td&gt;《人件》&lt;/td&gt;
-&lt;td&gt;Tom DeMarco/Timothy Lister&lt;/td&gt;
-&lt;td&gt;09-28&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;9&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;35&lt;/td&gt;
-&lt;td&gt;《最简单的图形与最复杂的信息》&lt;/td&gt;
-&lt;td&gt;黄慧敏&lt;/td&gt;
-&lt;td&gt;10-09&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;7&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;36&lt;/td&gt;
-&lt;td&gt;《敏捷武士——看敏捷高手交付卓越软件》&lt;/td&gt;
-&lt;td&gt;Jonathan　Rasmusson&lt;/td&gt;
-&lt;td&gt;10月&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-
-&lt;tr&gt;
-&lt;td&gt;37&lt;/td&gt;
-&lt;td&gt;《红顶商人胡雪岩》&lt;/td&gt;
-&lt;td&gt;高阳&lt;/td&gt;
-&lt;td&gt;12-09&lt;/td&gt;
-&lt;td align=&#34;right&#34;&gt;8&lt;/td&gt;
-&lt;td&gt;&lt;/td&gt;
-&lt;/tr&gt;
-&lt;/tbody&gt;
-&lt;/table&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>《经济学原理：微观经济学》读书笔记</title>
-      <link>http://boxcounter.com/essay/2016-04-16-%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%8E%9F%E7%90%86%EF%BC%9A%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
-      <pubDate>Sat, 16 Apr 2016 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2016-04-16-%E7%BB%8F%E6%B5%8E%E5%AD%A6%E5%8E%9F%E7%90%86%EF%BC%9A%E5%BE%AE%E8%A7%82%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
-      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2016-04-16/经济学原理：微观经济学.png&#34;/&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2016-04-16/%e7%bb%8f%e6%b5%8e%e5%ad%a6%e5%8e%9f%e7%90%86%ef%bc%9a%e5%be%ae%e8%a7%82%e7%bb%8f%e6%b5%8e%e5%ad%a6.mindnode.zip&#34;&gt;经济学原理：微观经济学.mindnode&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>《一本书读懂中国税》读书笔记</title>
-      <link>http://boxcounter.com/essay/2016-02-23-%E4%B8%80%E6%9C%AC%E4%B9%A6%E8%AF%BB%E6%87%82%E4%B8%AD%E5%9B%BD%E7%A8%8E/</link>
-      <pubDate>Tue, 23 Feb 2016 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2016-02-23-%E4%B8%80%E6%9C%AC%E4%B9%A6%E8%AF%BB%E6%87%82%E4%B8%AD%E5%9B%BD%E7%A8%8E/</guid>
-      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2016-02-23/一本书读懂中国税.png&#34;/&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2016-02-23/%e4%b8%80%e6%9c%ac%e4%b9%a6%e8%af%bb%e6%87%82%e4%b8%ad%e5%9b%bd%e7%a8%8e.mindnode.zip&#34;&gt;一本书读懂中国税.mindnode&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>《真实世界的经济学》读书笔记</title>
-      <link>http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</link>
-      <pubDate>Wed, 09 Sep 2015 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2015-09-09-%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6/</guid>
-      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-09-09/真实世界的经济学.png&#34;/&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2015-09-09/%E7%9C%9F%E5%AE%9E%E4%B8%96%E7%95%8C%E7%9A%84%E7%BB%8F%E6%B5%8E%E5%AD%A6.mindnode.zip&#34;&gt;真实世界的经济学.mindnode&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>《从来就没有救世主》读书笔记</title>
-      <link>http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</link>
-      <pubDate>Sat, 08 Aug 2015 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2015-08-08-%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB/</guid>
-      <description>&lt;p&gt;&lt;img src=&#34;http://boxcounter.com/images/2015-08-08/从来就没有救世主.png&#34;/&gt;&lt;/p&gt;
-
-&lt;hr /&gt;
-
-&lt;p&gt;源文件：&lt;a href=&#34;https://github.com/boxcounter/boxcounter.github.io/raw/master/attachments/2015-08-08/%E4%BB%8E%E6%9D%A5%E5%B0%B1%E6%B2%A1%E6%9C%89%E6%95%91%E4%B8%96%E4%B8%BB.mindnode.zip&#34;&gt;从来就没有救世主.mindnode&lt;/a&gt;&lt;/p&gt;
-</description>
-    </item>
     
     <item>
       <title>机械键盘之「Kinesis Contoured Advantage」</title>
@@ -1147,92 +78,6 @@
     </item>
     
     <item>
-      <title>2013读书小结</title>
-      <link>http://boxcounter.com/essay/2014-01-01-2013%E8%AF%BB%E4%B9%A6%E5%B0%8F%E7%BB%93/</link>
-      <pubDate>Wed, 01 Jan 2014 00:00:00 +0000</pubDate>
-      
-      <guid>http://boxcounter.com/essay/2014-01-01-2013%E8%AF%BB%E4%B9%A6%E5%B0%8F%E7%BB%93/</guid>
-      <description>&lt;p&gt;大概是在8月份，我突然想起要给今年读过的书建一个列表，于是拿着kindle、手机整理了一下：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;已完成
-
-&lt;ul&gt;
-&lt;li&gt;杂书
-
-&lt;ul&gt;
-&lt;li&gt;《细说秦汉》黎东方/王子今&lt;/li&gt;
-&lt;li&gt;《细说两晋南北朝》沈起炜&lt;/li&gt;
-&lt;li&gt;《吕著三国通史》吕思勉&lt;/li&gt;
-&lt;li&gt;《易中天中华史：国家》易中天&lt;/li&gt;
-&lt;li&gt;《易中天中华史：奠基》易中天&lt;/li&gt;
-&lt;li&gt;《如果现在是历史》吴空&lt;/li&gt;
-&lt;li&gt;《万历十五年》黄仁宇（3rd。毫无疑问这是一本好书，只是不太懂为什么地位那么高）&lt;/li&gt;
-&lt;li&gt;《如果这是宋史 1-7》高天流云&lt;/li&gt;
-&lt;li&gt;《中国史纲》张荫麟/吕思勉/蒋廷黻&lt;/li&gt;
-&lt;li&gt;《MacTalk 人生元编程》池建强&lt;/li&gt;
-&lt;li&gt;《看见》柴静&lt;/li&gt;
-&lt;li&gt;《重说中国近代史》张鸣&lt;/li&gt;
-&lt;li&gt;《三国配角演义》马伯庸&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;技术（部分缺失）
-
-&lt;ul&gt;
-&lt;li&gt;《The Art of Debugging with GDB, DDD, and Eclipse》Norman Matloff/Peter Jay Salzman&lt;/li&gt;
-&lt;li&gt;《LINUX System Pogramming》Robert Love&lt;/li&gt;
-&lt;li&gt;《Linux内核设计与实现》Rebert Love&lt;/li&gt;
-&lt;li&gt;《Debug.Hacks中文版_深入调试的技术和工具》吉岡弘隆/大和一洋/大岩尚宏/安部東洋/吉田俊輔（只读了应用层的部分）&lt;/li&gt;
-&lt;li&gt;《软件调试修炼之道》Paul Butcher（我很喜欢，但是朋友觉得一般）&lt;/li&gt;
-&lt;li&gt;《程序员的自我修养》俞甲子/石凡/潘爱民（去年还是前年读了windows部分，当时没想到还会有机会把linux部分也读完 \^_\^）&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;进行中
-
-&lt;ul&gt;
-&lt;li&gt;《柏杨版资治通鉴》司马光/柏杨 （目前读到刘宋末期，感谢bookworm兄制作了精排电子版）&lt;/li&gt;
-&lt;li&gt;《古代汉语》王立 （自学第一册，期望每篇都能背诵）&lt;/li&gt;
-&lt;li&gt;《大话设计模式》程杰&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;中断
-
-&lt;ul&gt;
-&lt;li&gt;《时间的形状》汪洁（30%）&lt;/li&gt;
-&lt;li&gt;《怪诞行为学2》Dan Ariely（看了60%，后半段没吸引力）&lt;/li&gt;
-&lt;li&gt;《中国哲学简史》冯友兰（看了40%，不是这块料~）&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;　　总得来说，去年阅读总量少，技术书更少，仅读的那几本还都是下半年读的。&lt;/p&gt;
-
-&lt;p&gt;　　新年新列表，除了还在进行中的书之外，现在排在阅读列表上的有这些：&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;杂书
-
-&lt;ul&gt;
-&lt;li&gt;《易中天中华史：祖先》易中天（易先生貌似在写一套中华史，我应该每本都会读）&lt;/li&gt;
-&lt;li&gt;《布局天下：中国古代军事地理大势》饶胜文&lt;/li&gt;
-&lt;li&gt;《慈禧全传》高阳&lt;/li&gt;
-&lt;li&gt;《胡雪岩全传》高阳&lt;/li&gt;
-&lt;li&gt;《大秦帝国》孙皓晖  （3rd。之前读了两遍，都是当年在320*240的htc上完成的，500W字著作，真是难为我高度近视的双眼）&lt;/li&gt;
-&lt;li&gt;《史记》司马迁 （重读，不知道第几遍，算作3rd吧）&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;li&gt;技术
-
-&lt;ul&gt;
-&lt;li&gt;《代码大全》Steve McConnell（3rd。推荐愿意把coding当作艺术的朋友读读）&lt;/li&gt;
-&lt;li&gt;《敏捷软件开发：原则、模式与实践》Robert C. Martin&lt;/li&gt;
-&lt;li&gt;《敏捷技能修炼：敏捷软件开发与设计的最佳实践》Alan Shalloway/Scott Bain/Ken Pugh/Amir Kolsky&lt;/li&gt;
-&lt;li&gt;《高效程序员的45个习惯：敏捷开发修炼之道》Venkat Subramaniam/Andy Hunt&lt;/li&gt;
-&lt;li&gt;《代码之美Beautiful Code》Grey Wilson&lt;/li&gt;
-&lt;li&gt;《操作系统设计与实现》Andrew S. Tanenbaum/Albert S. Woodhull&lt;/li&gt;
-&lt;li&gt;《操作系统：精髓与设计原理》William Stallings&lt;/li&gt;
-&lt;/ul&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
       <title>戏谈红颜祸水之夏姬</title>
       <link>http://boxcounter.com/essay/2013-08-08-%E6%88%8F%E8%B0%88%E7%BA%A2%E9%A2%9C%E7%A5%B8%E6%B0%B4%E4%B9%8B%E5%A4%8F%E5%A7%AC/</link>
       <pubDate>Thu, 08 Aug 2013 00:00:00 +0000</pubDate>
@@ -1261,10 +106,10 @@
     
     <item>
       <title>华硕U44S的USB3.0设备故障及解决</title>
-      <link>http://boxcounter.com/essay/2012-09-17-%E5%8D%8E%E7%A1%95U44S%E7%9A%84USB3.0%E8%AE%BE%E5%A4%87%E6%95%85%E9%9A%9C%E5%8F%8A%E8%A7%A3%E5%86%B3/</link>
+      <link>http://boxcounter.com/essay/2012-09-17-%E5%8D%8E%E7%A1%95U44S%E7%9A%84USB3/</link>
       <pubDate>Mon, 17 Sep 2012 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/essay/2012-09-17-%E5%8D%8E%E7%A1%95U44S%E7%9A%84USB3.0%E8%AE%BE%E5%A4%87%E6%95%85%E9%9A%9C%E5%8F%8A%E8%A7%A3%E5%86%B3/</guid>
+      <guid>http://boxcounter.com/essay/2012-09-17-%E5%8D%8E%E7%A1%95U44S%E7%9A%84USB3/</guid>
       <description>&lt;p&gt;最近收了一台华硕U44S。发现有一个问题，它内置的USB3.0口源于Fresco Logic。它的驱动与VMWare9.x冲突，导致USB3.0口偶尔不可用。&lt;/p&gt;
 
 &lt;p&gt;　　现象是：&lt;br /&gt;
@@ -1529,6 +374,152 @@
 &lt;p&gt;嘿黑 17:31:41&lt;br /&gt;
 黄师傅这么说，我能理解了，虽然还不是很彻底，我再悟一下&lt;/p&gt;
 &lt;/blockquote&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>近来的一些胡思乱想</title>
+      <link>http://boxcounter.com/essay/2010-01-25-%E8%BF%91%E6%9D%A5%E7%9A%84%E4%B8%80%E4%BA%9B%E8%83%A1%E6%80%9D%E4%B9%B1%E6%83%B3/</link>
+      <pubDate>Mon, 25 Jan 2010 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/essay/2010-01-25-%E8%BF%91%E6%9D%A5%E7%9A%84%E4%B8%80%E4%BA%9B%E8%83%A1%E6%80%9D%E4%B9%B1%E6%83%B3/</guid>
+      <description>
+
+&lt;h1 id=&#34;金钱-选择-自然法则-文明&#34;&gt;金钱、选择、自然法则、文明？&lt;/h1&gt;
+
+&lt;p&gt;现在这个年代，女孩嫁富人，男娃傍富婆貌似已经是稀疏平常的事了。网上、身边已经有一些关于这类话题的谈论、谩骂、讥讽，看、听的多了，有些想法，记录下来：&lt;/p&gt;
+
+&lt;p&gt;很久很久以前，人为了活下去而拼死拼活，那个时候，生存是第一目标。所以，最强势的男性拥有话语权和最多的女性，而最迷人（不知道当时的迷人应该怎么衡量，丰乳肥臀，好生养？貌似现在也差球不多）的女性则会获得强势男性的食物和保护。这些行为的目的总结起来实际上都是一样的：尽可能的将自己的基因遗传下去。
+所以在当时，这种行为是种自然的生物选择，挺符合进化论的。那么现在呢，是不是也是合情合理？也就是说，权势更NB的男性就应该获得更漂亮、更迷人的女性，并且应该与更多的优秀的女性ML，来让自己的基因更多更广的遗传下去？同样女性也是一样，应该尽量多的吸引男性，让他们尽情展现自己的长处，然后从中选择最优秀的来传播自己的基因？貌似合情合理：这不就是人性最原始、最符合进化论的体现么。貌似挺合理的说法，我都被说服了。&lt;/p&gt;
+
+&lt;p&gt;再想想，再想想？&lt;/p&gt;
+
+&lt;p&gt;如果按照这种进化论的说法，那么，那些60、70、80的老人，特别是那些只能借助仪器器械（包括轮椅）的，特别特别是那些有口耳障碍、连精神遗产也无法传播的老人，他们是不是应该被人道毁灭掉？回想很久很久以前的那个年代，老人都是直接被遗弃的。因为他们已经没法传播自己的基因、为后继者创造价值、甚至还要拖累后继者。而这个年代，他们要消耗紧缺的住房、他们要消耗昂贵的药品、医疗器械，等等等等。如果用上述所谓进化论的说法，他们是不是已经没有存在的价值了？&lt;/p&gt;
+
+&lt;p&gt;完毕、收工。&lt;/p&gt;
+
+&lt;h1 id=&#34;白起-长平之战&#34;&gt;白起、长平之战&lt;/h1&gt;
+
+&lt;p&gt;白起的长平之战的前后经过什么的我就不?嗦的，挺知名的，甚至连我玩过的一款游戏里都有这么个情节：一个NPC医生救死扶伤，牺牲自己的性命救了一名很重要的任务NPC，最后告诉我，他是白起的后人，为了赎先祖的罪孽，几代行医云云。当时还不太明白怎么回事，后来查资料才知道，原来白前辈坑了那么多人，是该赎罪，问题是，你这罪过不必人家农行的房贷，只需要&amp;rdquo;人死账不烂，父账子来还&amp;rdquo;，两辈人而已。这么大的罪孽，你白家得多少辈人才能还完啊。&lt;/p&gt;
+
+&lt;p&gt;OK，回正题。我想聊的是，如果换做你是白起，那40W降卒，你怎么处置？&lt;/p&gt;
+
+&lt;p&gt;有这么几种可能的方案：
+方案一： 放了，为被称为虎狼之国的秦国赢得美誉。
+   但是~这样~真的可行么？当时整个中国都是打来打去，你今儿放回去，明儿这40W说不定就来踹你家门。换做是你，累死累活打赢了对方，然后放之归山，过段时日人家又打过来，把忠心耿耿跟随你的兄弟、士兵干掉，你愿意吗？我是不愿意的。而且即使白起愿意，秦王也未必会愿意。&lt;/p&gt;
+
+&lt;p&gt;方案二： 全赶回国，当苦力。
+这个~这个方案的问题还是蛮大的：
+1. 从赵之长平赶40W民工回秦，当时没火车什么的，路上你得管吃管喝，你还得严防死守100天（借用某派出所标语），这一路累都累死你。
+2. 赶回去了，这么大一票民工，你怎么管？40W人啊，你秦国得拿多少个MBA人才才能管理过来？管不好，人家与故国相通，一锅端了你。&lt;/p&gt;
+
+&lt;p&gt;方案三：留一小部分当苦力，剩下的全送出去当人情
+这个~这个~这个更不靠谱。一来人家未必肯接收，好歹赵国还是蛮大一国的，不好惹。二来人家心里也怕呀，你秦国怕人家挠你家门，人家就不怕被刨祖坟？&lt;/p&gt;
+
+&lt;p&gt;方案四：跟赵国交涉，拿地、钱来换
+这个貌似还靠点谱，但是，再想想？当时的交通可只能靠马，你把你这个意向蹬蹬蹬送到赵王手里要那么些天，人家商量琢磨要那么些天，琢磨完了不爽跟你讨价还价也要那么些天，好不容易等到双方都满意了，人家筹钱也要筹那么些天，筹完了送过来还要那么些天。在这么多个“那么些天”里，你得提心吊胆、严防死守，不让那40W降卒闹事。万一没守好，说不定讨价还价的筹码就是你秦军。而且，即便是你守好了，有这么长的功夫，你帅部一路攻城拔寨，最后所得也不见得比对方给的赎金少。而且即便你运气好的无敌，这笔生意做成了，你送回的那40W降卒可是哀兵哦，“哀兵必胜”你可知道？OK，总的说来，这个方案也不可行。&lt;/p&gt;
+
+&lt;p&gt;以上是我个人琢磨的几个想法，最后被一一否决了。最后，白老爷子就用了一个极其简略、极其残忍的方法给解决了。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>聊聊韩信</title>
+      <link>http://boxcounter.com/essay/2010-01-07-%E8%81%8A%E8%81%8A%E9%9F%A9%E4%BF%A1/</link>
+      <pubDate>Thu, 07 Jan 2010 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/essay/2010-01-07-%E8%81%8A%E8%81%8A%E9%9F%A9%E4%BF%A1/</guid>
+      <description>
+
+&lt;p&gt;床头放了一本《史记》，是我最喜欢的讲列传那本。这两天在看韩信，觉得他挺有故事的，值得八一八。&lt;/p&gt;
+
+&lt;h1 id=&#34;其人&#34;&gt;其人&lt;/h1&gt;
+
+&lt;p&gt;从书中对他的描述来看，这厮不算是什么好鸟。游手好闲，没事就到处蹭吃蹭喝。后来蹭得人家亭长老婆大清早起来做饭，做好了就直接端卧室里吃掉。可见被蹭那家人对韩信是多么的厌恶。&lt;br /&gt;
+没饭蹭了，纠结的韩信就跑去钓鱼，估计年纪轻轻，没什么耐性，技术也不算好，还是经常饿肚子。后来就遇到了传说中的漂母，看他可怜，每天都分一点自己的饭给他。当然，吃了不能白吃，毕竟人家一老太太，自己一年轻小伙，老蹭人家的，多不好意思。于是，撂下一句话：“日后一定加倍报答您”。这话要是放在程婴身上，我信。可出自韩信嘴里，我就觉得不太靠谱了。在我看来，韩信口中的这句，跟街头斗殴，一边被揍了之后临走前撂下的那句“你给老子等着，XXXX”差球不多。都是过过嘴瘾，给自己找个台阶。别说我带着有色眼镜，从史记中对他的描述来看，我就觉得这厮是一街头小流氓，还是胆小的那种。关于胆小，咱们接着说。&lt;br /&gt;
+韩信平常都会别着一把剑在身上，我记得百家讲坛里貌似有一集，某位教授说到这点的时候强调韩信家族曾经可能有点背景云云，这个我就不知道了，反正史记里淮阴侯列传里是没提的。我想说的是，这把剑是帅气、有面子、威风，但是，也给他惹了一流传千古的麻烦。某恶少为难他：有种你丫拿起你的剑刺爷一刀，没种就从爷胯下钻过去。我貌似记得后世很多资料里说到这个故事的时候都是站在韩信这边的，往死里夸。但是回过头来想想，一佩剑的人，年纪轻轻，成天游手好闲，到处蹭饭，而且脸皮超厚，逮住一家就往死里蹭：书里写的是，他蹭亭长家的饭，一蹭就是几个月。而且这还不说，连老奶奶的饭也好意思分。要是你家附近有这么一人，你指不定也想抄起一块板砖拍丫。&lt;br /&gt;
+再说回来，按照当时的环境来说，稍微读过点书的人，都会知道气节、骨气、把名声看得比生命还重要。但是韩信还是老老实实的从人家跨下钻了过去。其实这种行为放在不少人身上，都会做同样的选择，问题是后世的资料硬是把这破事美化成传说。这就让人看着不爽了。不过回头再想想，历史总是由成功的人书写（我忘了这话是谁说的了）。韩信虽然最后没能善终，但好歹也是千古留名的神将。&lt;/p&gt;
+
+&lt;h1 id=&#34;其事&#34;&gt;其事&lt;/h1&gt;
+
+&lt;p&gt;前面说了不少韩信的坏话，下面说说这厮光辉NB的一面。&lt;/p&gt;
+
+&lt;h2 id=&#34;拜将&#34;&gt;拜将&lt;/h2&gt;
+
+&lt;p&gt;萧丞相夜追韩信的故事我从小就经常听。当时就特向往：哪天要是有一NB的伯乐，慧眼识英才，这么追我，就太妙了~&lt;br /&gt;
+韩信拜将后，同刘邦讲的那一席话确实厉害，完全的剖析了当时的局势，把高祖的优势和霸王的短处一条条摆出来，最后得出结论：高祖虽然眼下情况看起来不是特别乐观，其实不然，怎么怎么滴。而项羽虽然兵强马壮，现在是王中之王，但是也不然，怎么怎么滴。一席话把高祖说的乐开了花，感慨相见恨晚。看到这里的时候，我对韩信的敬仰之情到达了一个顶点。这哥们不仅对局势看得透（有可能是之前跟萧何交流比较多，从萧相国那得到了不少情况。而切他自己是从项羽那逃出来的，又对项羽很了解），而且还难得有一副好口才，放到三国，也算是一员辩才。&lt;/p&gt;
+
+&lt;h2 id=&#34;背水一战&#34;&gt;背水一战&lt;/h2&gt;
+
+&lt;p&gt;这一仗打得非常漂亮，称其为绝世之作，一点也不夸张。这一仗双方的对比是，韩信方，书上记载“几万人”，成安君（这哥们知名度相当凑合，我想查点详细资料都不好查，最有名的是莫过于跟常山王张耳的那段）号称二十万。而且，韩信是千里迢迢跑到人家的地盘上去打仗。途中还要经过一个“不能两辆兵车并行，不能使骑兵排成行列”的隘道。不过幸好，对方的李广?（牛人，名将李牧之后）的计策没有被成安君采纳，要不然，韩信这一仗估计要郁闷。从书上记载的战后韩信与李广?的交流来看，如果李广?的计策得以实施，这一流传千古的战役可能从史书上消失不说，韩信小命也难保。OK，扯远了，讲正戏。
+我记得以前读背水一战的典故的时候，背水被当做重中之重来强调。但是从这篇列传里的记载来看，背水不是唯一的亮点。韩信在进攻之前的一个夜晚里，派了2千轻骑兵抄小道到成安君大营的附近埋伏起来。韩信给他们的命令是，等对方倾巢而出之后，急速冲到他们的大本营里，把咱的大旗插上。读到这里的时候，我还有点疑惑，韩信怎么会知道对方会倾巢出动，或者说韩信怎么让对方倾巢出动？这个很关键哦，对方号称二十万，打个折，也有10万。人家为什么就要倾巢而出，注意哦，是真正的倾巢哦。要不然人家寨里哪怕只留一千人驻守，2千的轻骑兵也很难短时间里端下来。&lt;/p&gt;
+
+&lt;p&gt;这场战役神就神在这里，韩信背水排阵，然后让一万部队去佯攻成安君。这个“佯攻”可是个技术活，首先，你不能把自己人给佯住，要不然先头部队一佯退，大部队一看也跟着真退，可就玩完了。在这个基础上，你还要“佯”得让敌人信，而且要完全的相信，这样对方才会倾巢。
+继续分析，怎样才能不把自己人给佯住？&lt;br /&gt;
+我最先想到的是事先跟自己部队说清楚，但是这个方案立刻被否决了，因为太SX了，对方虽然迂腐，但是间谍应该还是会用的~&lt;br /&gt;
+或者，是用背水，让大家即便被佯住也无路可逃？这个方案也不行，虽然无路可逃，但是阵型一乱，只能等着被菜，再说，史书上记载的战败后士兵们死命跳河的事也不少。&lt;br /&gt;
+又或者，临战前通知部队，让间谍来不及通风报信？&lt;br /&gt;
+总之，我是没想出什么好办法的~&lt;br /&gt;
+OK，咱们再看看韩信是怎么佯对方的。书上的记载是：抛弃了主帅指挥用的旗鼓。这招狠，古人出征前旗杆断了都会忐忑不安，韩信这厮居然直接就给扔了。这戏做的太真了，成安君果然就倾巢了，想一股气拿下韩信。这个时候背水的优势就体现出来了。将士们各个奋勇争先，拼死作战。成安君想退兵，回头一看，大兵营上插着汉军的旗子，于是大军一慌神，就这么稀里哗啦了~&lt;br /&gt;
+看完了这一段，我个人认为，背水一战里，最闪光的是那2千轻骑兵，和韩信对心理学的运用，太NB了，即便不当将军，也能成一名留史册的辩士。&lt;/p&gt;
+
+&lt;p&gt;我手上的这本史记里，淮阴侯列传共有9页纸，聊到这里，只聊了4页，后面几页，有空再接着聊。&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>mrcool充值记</title>
+      <link>http://boxcounter.com/essay/2007-06-23-mrcool%E5%85%85%E5%80%BC%E8%AE%B0/</link>
+      <pubDate>Sat, 23 Jun 2007 00:00:00 +0000</pubDate>
+      
+      <guid>http://boxcounter.com/essay/2007-06-23-mrcool%E5%85%85%E5%80%BC%E8%AE%B0/</guid>
+      <description>&lt;p&gt;今天中午，我陪mrcool同学去移动大厅为他新办的全球通号充值，过程颇为曲折、离奇，故写此一文讥之：&lt;/p&gt;
+
+&lt;p&gt;mrcool： 您好，最近全球通有充值送话费的活动吧。（口气很是肯定）&lt;br /&gt;
+移动帅哥（下文以“移帅”代替）： 没有！&lt;br /&gt;
+mrcool： 啊？！。。。。。。（语气很是惊讶，省略鸟语约百字~）&lt;br /&gt;
+移帅： 那是储值送话费，不是充值送话费。&lt;br /&gt;
+mrcool： !@#，这两者有什么不同么？&lt;br /&gt;
+移帅： 一个姓王，一个姓李&lt;br /&gt;
+mrcool： &amp;hellip;&amp;hellip;&amp;hellip;，那帮我储值吧。&lt;br /&gt;
+移帅： 您的手机号？&lt;br /&gt;
+mrcool： 不知道~昨天刚办的~&lt;br /&gt;
+移帅： 　&amp;hellip;.那您打我的手机吧&lt;br /&gt;
+mrcool照办&amp;hellip;..&lt;br /&gt;
+移帅： 您的密码？&lt;br /&gt;
+mrcool： 密码？我办的时候美要求我输入密码啊&amp;hellip;(此处继续省略若干鸟语)&lt;br /&gt;
+移帅： 全球通是有密码的，您再想想？&lt;br /&gt;
+mrcool： 是移动的人员上门帮我办的啊，他没让我输入密码什么的&lt;br /&gt;
+移帅： &amp;hellip;..那您的身份证？&lt;br /&gt;
+mrcoo： 没带&amp;hellip;&amp;hellip;&lt;br /&gt;
+移帅：　不好意思，全球通办理服务必须要有密码。&lt;br /&gt;
+mrool：  哦，那我先问问。（起身，打电话）&lt;br /&gt;
+移帅： 您慢走～&lt;br /&gt;
+mrcool：  我不走~我打电话&lt;br /&gt;
+移帅： &amp;hellip;&amp;hellip;&amp;hellip;&lt;/p&gt;
+
+&lt;p&gt;5分钟后，mrcool回到原座位，输入了刚问回来的密码..&lt;br /&gt;
+移帅： 您想冲多少?&lt;br /&gt;
+mrcool： &amp;hellip;.(省略询问储值送话费的鸟语少许)，那我一次性多充点吧。您这可以刷卡么？&lt;br /&gt;
+移帅： 可以，您的卡？&lt;br /&gt;
+mrcool： 没带&amp;hellip;&amp;hellip;&lt;br /&gt;
+移帅： &amp;hellip;&amp;hellip;.&lt;br /&gt;
+最后，我只能无奈的陪着mrcool回公司了，并答应下午下班后再来&lt;/p&gt;
+
+&lt;p&gt;下午6点，在电梯中&amp;hellip;..&lt;br /&gt;
+我：  带齐东西没？&lt;br /&gt;
+mrcool： 齐了！你看，手机，手机（这丫现在双网，双卡，双手机～），钱，银行卡，信用卡，打火机，打火机～&lt;br /&gt;
+我： 烟呢？&lt;br /&gt;
+mrcool： 没带~&lt;br /&gt;
+我： 那你丫带俩火机干嘛？？？？&lt;br /&gt;
+mrcool： &amp;hellip;&amp;hellip;..&lt;/p&gt;
+
+&lt;p&gt;再次来到移动大厅，一进门发现就有些异样~~~ 　　&lt;br /&gt;
+mrcool：　您好，我又来了～～～&lt;br /&gt;
+移帅：　不好意思，我们系统坏了～&lt;br /&gt;
+mrcool:  &amp;hellip;&amp;hellip;..&lt;/p&gt;
+
+&lt;p&gt;之后，我们一起在移动大厅对面吃了晚饭，并再次跑到大厅，查看移动系统是否OK了，当然，以mrcool今天的运气来说，结果是可以预料的&amp;hellip;.&lt;/p&gt;
 </description>
     </item>
     

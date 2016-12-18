@@ -28,6 +28,8 @@
               
                 <li><a href="/essay">essay</a></li>
               
+                <li><a href="/reading_notes">reading_notes</a></li>
+              
                 <li><a href="/technique">technique</a></li>
               
               </ul>
@@ -42,6 +44,9 @@
         <h1><a href="http://boxcounter.com/technique/2015-09-01-baselineAligned/">baselineAligned属性</a></h1>
         <hr />
         <span class="post-time">2015-09-01</span>
+
+        
+
         <div class="post">
             <p>在使用LinearLayout+TextView的过程中遇到一个看似诡异的问题，显示效果如下：</p>
 
@@ -49,7 +54,7 @@
 
 <p>其中两个灰色方块是使用代码动态创建的TextView。它们的父LinearLayout是这样的：</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%">&lt;LinearLayout
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span>&lt;LinearLayout
     android:id=<span style="color: #a31515">&quot;@+id/ll_files&quot;</span>
     android:layout_width=<span style="color: #a31515">&quot;wrap_content&quot;</span>
     android:layout_height=<span style="color: #a31515">&quot;100dp&quot;</span>
@@ -57,7 +62,7 @@
     android:orientation=<span style="color: #a31515">&quot;horizontal&quot;</span>
     /&gt;
 </pre></div>
-</p>
+
 
 <p>不知道是什么原因，导致第一个TextView「下挫」了一些。仔细检查了它的margin和padding都是0、符合预期，但top是29。</p>
 
@@ -65,7 +70,7 @@
 
 <p>顺着LinearLayout.onLayout()追踪到了LinearLayout.layoutHorizontal()，发现了这样一段代码：</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span style="color: #2b91af">void</span> layoutHorizontal(<span style="color: #2b91af">int</span> left, <span style="color: #2b91af">int</span> top, <span style="color: #2b91af">int</span> right, <span style="color: #2b91af">int</span> bottom) {
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span><span style="color: #2b91af">void</span> layoutHorizontal(<span style="color: #2b91af">int</span> left, <span style="color: #2b91af">int</span> top, <span style="color: #2b91af">int</span> right, <span style="color: #2b91af">int</span> bottom) {
     <span style="color: #008000">// 若干无关代码，略</span>
     
     <span style="color: #2b91af">int</span> childBaseline = -1;
@@ -90,7 +95,7 @@
     <span style="color: #008000">// 若干无关代码，略</span>
 }
 </pre></div>
-</p>
+
 
 <p>当执行完A行时，childTop等于29。问题出在这里，再反向阅读代码，跟踪到了两个关键变量：</p>
 

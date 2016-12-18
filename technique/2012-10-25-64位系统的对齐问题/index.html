@@ -28,6 +28,8 @@
               
                 <li><a href="/essay">essay</a></li>
               
+                <li><a href="/reading_notes">reading_notes</a></li>
+              
                 <li><a href="/technique">technique</a></li>
               
               </ul>
@@ -42,13 +44,16 @@
         <h1><a href="http://boxcounter.com/technique/2012-10-25-64%E4%BD%8D%E7%B3%BB%E7%BB%9F%E7%9A%84%E5%AF%B9%E9%BD%90%E9%97%AE%E9%A2%98/">64位系统的对齐问题</a></h1>
         <hr />
         <span class="post-time">2012-10-25</span>
+
+        
+
         <div class="post">
             <p>今天在技术群里有位童鞋问了一个问题：</p>
 
 <blockquote>
 <p>On 64-bit Windows, if a data structure is misaligned, routines that manipulate the structure, such as RtlCopyMemory and memcpy, will not fault. Instead, they will raise an exception. For example:</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%">&gt;  <span style="border: 1px solid #FF0000">#</span>pragma pack (1) <span style="color: #008000">// also set by /Zp switch </span>
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span>&gt;  <span style="border: 1px solid #FF0000">#</span>pragma pack (1) <span style="color: #008000">// also set by /Zp switch </span>
 &gt;  <span style="color: #0000ff">struct</span> Buffer {
 &gt;      ULONG size;
 &gt;      <span style="color: #2b91af">void</span> *ptr;
@@ -61,17 +66,17 @@
 &gt;  }
 &gt; 
 </pre></div>
-</p>
+
 
 <p>You could use the UNALIGNED macro to fix this:</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%">&gt;  <span style="color: #2b91af">void</span> SetPointer(<span style="color: #2b91af">void</span> *p) {
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span>&gt;  <span style="color: #2b91af">void</span> SetPointer(<span style="color: #2b91af">void</span> *p) {
 &gt;      <span style="color: #0000ff">struct</span> Buffer s;
 &gt;      *(UNALIGNED <span style="color: #2b91af">void</span> *)&amp;s.ptr = p;
 &gt;  }
 &gt; 
 </pre></div>
-</p>
+
 </blockquote>
 
 <p>　　我搜了一下，这段话来自<a href="http://msdn.microsoft.com/en-us/library/windows/hardware/ff559744.aspx">Porting Issues Checklist</a>这篇文章。</p>
@@ -165,7 +170,6 @@ CPL &lt; 3.<br />
 <pre><code>0: kd&gt; r efl
 efl=00000246
 
-
 0: kd&gt; .formats 0x246
   ......
   Binary:  00000000 00000000 00000000 00000000 00000000 00000000 00000010 01000110
@@ -174,7 +178,6 @@ efl=00000246
 
 0: kd&gt; r cr0
 cr0=0000000080050031
-
 
 0: kd&gt; .formats 0x0000000080050031 
   ......
@@ -188,16 +191,13 @@ cr0=0000000080050031
 <pre><code>0: kd&gt; r cr0
 cr0=0000000080050033
 
-
 0: kd&gt; .formats 0000000080050033
   ......
   Binary:  11111111 11111111 11111111 11111111 10000000 00000101 00000000 00110011
   ......
 
-
 0: kd&gt; r efl
 efl=00000286
-
 
 0: kd&gt; .formats 00000286
   ......

@@ -2,19 +2,19 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>X86 on Boxcounter的烂笔头</title>
-    <link>http://boxcounter.com/tags/x86/</link>
+    <link>http://localhost:1313/tags/x86/</link>
     <description>Recent content in X86 on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
     <lastBuildDate>Wed, 19 Oct 2011 00:00:00 +0000</lastBuildDate>
-    <atom:link href="http://boxcounter.com/tags/x86/index.xml" rel="self" type="application/rss+xml" />
+    <atom:link href="http://localhost:1313/tags/x86/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>SEH分析笔记（X86篇）</title>
-      <link>http://boxcounter.com/technique/2011-10-19-SEH-x86/</link>
+      <link>http://localhost:1313/technique/2011-10-19-SEH-x86/</link>
       <pubDate>Wed, 19 Oct 2011 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2011-10-19-SEH-x86/</guid>
+      <guid>http://localhost:1313/technique/2011-10-19-SEH-x86/</guid>
       <description>&lt;p&gt;v1.0.2&lt;/p&gt;
 
 &lt;p&gt;2015-07-25，注：因为排版过于复杂繁琐，目前仅提供html文件，请谅解。&lt;/p&gt;

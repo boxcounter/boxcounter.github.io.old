@@ -28,6 +28,8 @@
               
                 <li><a href="/essay">essay</a></li>
               
+                <li><a href="/reading_notes">reading_notes</a></li>
+              
                 <li><a href="/technique">technique</a></li>
               
               </ul>
@@ -42,6 +44,9 @@
         <h1><a href="http://boxcounter.com/technique/2012-05-31-VS2010%E7%BC%96%E8%AF%91regex%E5%BA%93%E7%9A%84%E9%97%AE%E9%A2%98/">VS2010编译regex库的问题</a></h1>
         <hr />
         <span class="post-time">2012-05-31</span>
+
+        
+
         <div class="post">
             <p>今天把一些VS 2005工程升级到VS 2010，在升级过程中，遇到regex库编译错误。如下：</p>
 
@@ -53,7 +58,7 @@ error C2059: syntax error : ';'
 
 <p>　　出现该错误的代码来自restack.h，如下：</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span style="color: #0000ff">namespace</span> detail
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span><span style="color: #0000ff">namespace</span> detail
 {
 
 <span style="color: #008000">// For compile-time assertions that generate</span>
@@ -61,7 +66,7 @@ error C2059: syntax error : ';'
 <span style="color: #0000ff">template</span>&lt; <span style="color: #2b91af">bool</span> f &gt; <span style="color: #0000ff">struct</span> <span style="color: #0000ff">static_assert</span>;
 <span style="color: #0000ff">template</span>   <span style="color: #0000ff">struct</span> <span style="color: #0000ff">static_assert</span> { <span style="color: #0000ff">static_assert</span>() {} };
 </pre></div>
-</p>
+
 
 <p>　　该问题的原因是regex定义的static_assert模板与VS 2010的关键字冲突，将regex中的改名，比如改成_static_assert后就正常了。</p>
 

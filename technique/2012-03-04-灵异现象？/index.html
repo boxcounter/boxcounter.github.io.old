@@ -28,6 +28,8 @@
               
                 <li><a href="/essay">essay</a></li>
               
+                <li><a href="/reading_notes">reading_notes</a></li>
+              
                 <li><a href="/technique">technique</a></li>
               
               </ul>
@@ -42,23 +44,26 @@
         <h1><a href="http://boxcounter.com/technique/2012-03-04-%E7%81%B5%E5%BC%82%E7%8E%B0%E8%B1%A1%EF%BC%9F/">灵异现象？</a></h1>
         <hr />
         <span class="post-time">2012-03-04</span>
+
+        
+
         <div class="post">
             <p>前两天遇到一个灵异现象，记录下来。</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%">cchFullHeaderLen += strlen(<span style="color: #a31515">&quot;Request-Line: &quot;</span>) +
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span>cchFullHeaderLen += strlen(<span style="color: #a31515">&quot;Request-Line: &quot;</span>) +
     strlen(pSessionData-&gt;HttpOpenReq.lpszVerb) +
     strlen(<span style="color: #a31515">&quot; &quot;</span>) +
     strlen(pSessionData-&gt;HttpOpenReq.lpszObjectName) +
     (NULL != pSessionData-&gt;HttpOpenReq.lpszVersion) ? (strlen(<span style="color: #a31515">&quot; &quot;</span>) + strlen(pSessionData-&gt;HttpOpenReq.lpszVersion)) : 0 +
     strlen(<span style="color: #a31515">&quot;\r\n&quot;</span>);
 </pre></div>
-</p>
+
 
 <p>调试的过程中发现，pSessionData-&gt;HttpOpenReq.lpszVersion为NULL，但是依然会执行“(strlen(&rdquo; &ldquo;) + strlen(pSessionData-&gt;HttpOpenReq.lpszVersion))”。</p>
 
 <p>确认不是编码错误后，反汇编调试：</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%">Boxr<span style="border: 1px solid #FF0000">!</span>MyFunction+0x2b2
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span>Boxr<span style="border: 1px solid #FF0000">!</span>MyFunction+0x2b2
 <span style="border: 1px solid #FF0000">6</span>a515742  xor     edx,edx
 <span style="border: 1px solid #FF0000">6</span>a515744  cmp     <span style="color: #2b91af">dword</span> ptr [ecx+23Ch],0
 <span style="border: 1px solid #FF0000">6</span>a51574b  setne   dl
@@ -68,7 +73,7 @@
 <span style="border: 1px solid #FF0000">6</span>a515757  call    Boxr<span style="border: 1px solid #FF0000">!</span>strlen (6a5b5bd0)
 <span style="border: 1px solid #FF0000">6</span>a51575c  add     esp,4
 </pre></div>
-</p>
+
 
 <p>其中ecx+23Ch就是pSessionData-&gt;HttpOpenReq.lpszVersion，查看如下：</p>
 
@@ -131,7 +136,7 @@ zf=0
 <p>但是在整理本文的过程中，仔细分析了一遍汇编代码，发现，丫是个低级错误 - 运算符优先级错误……<br />
 实际上，C代码真正的执行逻辑是这样的：</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%">cchFullHeaderLen += (strlen(<span style="color: #a31515">&quot;Request-Line: &quot;</span>) + strlen(pSessionData-&gt;HttpOpenReq.lpszVerb) + strlen(<span style="color: #a31515">&quot; &quot;</span>) + strlen(pSessionData-&gt;HttpOpenReq.lpszObjectName) + (NULL != pSessionData-&gt;HttpOpenReq.lpszVersion) ) 
+<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span>cchFullHeaderLen += (strlen(<span style="color: #a31515">&quot;Request-Line: &quot;</span>) + strlen(pSessionData-&gt;HttpOpenReq.lpszVerb) + strlen(<span style="color: #a31515">&quot; &quot;</span>) + strlen(pSessionData-&gt;HttpOpenReq.lpszObjectName) + (NULL != pSessionData-&gt;HttpOpenReq.lpszVersion) ) 
    ? (strlen(<span style="color: #a31515">&quot; &quot;</span>) + strlen(pSessionData-&gt;HttpOpenReq.lpszVersion)) : ( 0 + strlen(<span style="color: #a31515">&quot;\r\n&quot;</span>) );
 </pre></div>
 </p>
