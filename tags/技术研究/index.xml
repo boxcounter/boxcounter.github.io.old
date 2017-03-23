@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Boxcounter的烂笔头</title>
+    <title>技术研究 on Boxcounter的烂笔头</title>
     <link>http://boxcounter.com/tags/%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6/index.xml</link>
-    <description>Recent content on Boxcounter的烂笔头</description>
+    <description>Recent content in 技术研究 on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
     <atom:link href="http://boxcounter.com/tags/%E6%8A%80%E6%9C%AF%E7%A0%94%E7%A9%B6/index.xml" rel="self" type="application/rss+xml" />
@@ -406,10 +406,10 @@ QueueTest!main:
     
     <item>
       <title>TEB KPCR GS in x64</title>
-      <link>http://boxcounter.com/technique/2012-02-08-TEB%20KPCR%20GS%20in%20x64/</link>
+      <link>http://boxcounter.com/technique/2012-02-08-TEB-KPCR-GS-in-x64/</link>
       <pubDate>Wed, 08 Feb 2012 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2012-02-08-TEB%20KPCR%20GS%20in%20x64/</guid>
+      <guid>http://boxcounter.com/technique/2012-02-08-TEB-KPCR-GS-in-x64/</guid>
       <description>&lt;p&gt;在x86中，如果折腾TEB或者KPCR，可能需要处理fs:[0x???]这样的地址，在x86中，咱们可以通过dg命令来手动查看：&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;kd&amp;gt; dg @fs
@@ -546,10 +546,10 @@ VOID
     
     <item>
       <title>关于完成例程（Completion Routine）</title>
-      <link>http://boxcounter.com/technique/2011-10-26-%E5%85%B3%E4%BA%8E%E5%AE%8C%E6%88%90%E4%BE%8B%E7%A8%8B%EF%BC%88Completion%20Routine%EF%BC%89/</link>
+      <link>http://boxcounter.com/technique/2011-10-26-%E5%85%B3%E4%BA%8E%E5%AE%8C%E6%88%90%E4%BE%8B%E7%A8%8B%EF%BC%88Completion-Routine%EF%BC%89/</link>
       <pubDate>Wed, 26 Oct 2011 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2011-10-26-%E5%85%B3%E4%BA%8E%E5%AE%8C%E6%88%90%E4%BE%8B%E7%A8%8B%EF%BC%88Completion%20Routine%EF%BC%89/</guid>
+      <guid>http://boxcounter.com/technique/2011-10-26-%E5%85%B3%E4%BA%8E%E5%AE%8C%E6%88%90%E4%BE%8B%E7%A8%8B%EF%BC%88Completion-Routine%EF%BC%89/</guid>
       <description>&lt;p&gt;通常使用完成例程有这么三步：&lt;/p&gt;
 
 &lt;ol&gt;
@@ -712,10 +712,10 @@ MS为什么不把FSD和磁盘驱动堆叠成一个设备栈，而要用vpb来链
     
     <item>
       <title>有关IoEnumerateRegisteredFiltersList</title>
-      <link>http://boxcounter.com/technique/2011-10-25-%E6%9C%89%E5%85%B3%20IoEnumerateRegisteredFiltersList/</link>
+      <link>http://boxcounter.com/technique/2011-10-25-%E6%9C%89%E5%85%B3IoEnumerateRegisteredFiltersList/</link>
       <pubDate>Tue, 25 Oct 2011 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2011-10-25-%E6%9C%89%E5%85%B3%20IoEnumerateRegisteredFiltersList/</guid>
+      <guid>http://boxcounter.com/technique/2011-10-25-%E6%9C%89%E5%85%B3IoEnumerateRegisteredFiltersList/</guid>
       <description>&lt;p&gt;有关于IoEnumerateRegisteredFiltersList
 昨天逆一个驱动的时候发现静态分析出来的逻辑跟动态调试的逻辑不一致，继续跟下去，发现分歧处在IoEnumerateRegisteredFiltersList函数，原型如下：&lt;/p&gt;
 
@@ -1260,10 +1260,10 @@ __nextIrpSp-&amp;gt;Control = 0; }
     
     <item>
       <title>对&#39;CDO&#39;和&#39;FiDO&#39;的理解</title>
-      <link>http://boxcounter.com/technique/2007-12-08-%E5%AF%B9%27CDO%27%E5%92%8C%27FiDO%27%E7%9A%84%E7%90%86%E8%A7%A3/</link>
+      <link>http://boxcounter.com/technique/2007-12-08-%E5%AF%B9CDO%E5%92%8CFiDO%E7%9A%84%E7%90%86%E8%A7%A3/</link>
       <pubDate>Sat, 08 Dec 2007 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2007-12-08-%E5%AF%B9%27CDO%27%E5%92%8C%27FiDO%27%E7%9A%84%E7%90%86%E8%A7%A3/</guid>
+      <guid>http://boxcounter.com/technique/2007-12-08-%E5%AF%B9CDO%E5%92%8CFiDO%E7%9A%84%E7%90%86%E8%A7%A3/</guid>
       <description>&lt;p&gt;下面是我对于CDO、FiDO的理解，不一定正确，但是还是记录下来，以后学习清楚来再来修正。&lt;/p&gt;
 
 &lt;ol&gt;

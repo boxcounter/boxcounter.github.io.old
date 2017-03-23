@@ -26,7 +26,11 @@
               <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="sections">Sections<span class="caret"></span></a>
               <ul class="dropdown-menu" aria-labelledby="download">
               
+                <li><a href="/"></a></li>
+              
                 <li><a href="/essay">essay</a></li>
+              
+                <li><a href="/reading">reading</a></li>
               
                 <li><a href="/technique">technique</a></li>
               
@@ -39,13 +43,16 @@
 
 
     <div class="container">
-        <h1><a href="http://localhost:1313/technique/2015-09-05-weakref_type.attemptIncStrong/">RefBase::weakref_type::attemptIncStrong的理解</a></h1>
+        <h1><a href="http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/">RefBase::weakref_type::attemptIncStrong的理解</a></h1>
         <hr />
         <span class="post-time">2015-09-05</span>
+
+        
+
         <div class="post">
             <p>见中文注释内容：</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span style="color: #2b91af">bool</span> RefBase::weakref_type::attemptIncStrong(<span style="color: #0000ff">const</span> <span style="color: #2b91af">void</span>* id)
+<div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span><span style="color: #2b91af">bool</span> RefBase::weakref_type::attemptIncStrong(<span style="color: #0000ff">const</span> <span style="color: #2b91af">void</span>* id)
 {
     incWeak(id);
     
@@ -117,9 +124,9 @@
     <span style="color: #0000ff">return</span> true;
 }
 </pre></div>
-</p>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span style="color: #2b91af">void</span> RefBase::decStrong(<span style="color: #0000ff">const</span> <span style="color: #2b91af">void</span>* id) <span style="color: #0000ff">const</span>
+
+<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span><span style="color: #2b91af">void</span> RefBase::decStrong(<span style="color: #0000ff">const</span> <span style="color: #2b91af">void</span>* id) <span style="color: #0000ff">const</span>
 {
     weakref_impl* <span style="color: #0000ff">const</span> refs = mRefs;
     refs-&gt;removeStrongRef(id);
@@ -165,10 +172,7 @@
         <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
         <script src="/js/bootstrap.min.js"></script>
         <script src="/js/bootswatch.js"></script>
-    <script data-no-instant>document.write('<script src="http://'
-        + (location.host || 'localhost').split(':')[0]
-		+ ':1313/livereload.js?mindelay=10"></'
-        + 'script>')</script></body>
+    </body>
 </html>
 
 

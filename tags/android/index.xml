@@ -1,19 +1,19 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Boxcounter的烂笔头</title>
+    <title>Android on Boxcounter的烂笔头</title>
     <link>http://boxcounter.com/tags/android/index.xml</link>
-    <description>Recent content on Boxcounter的烂笔头</description>
+    <description>Recent content in Android on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
     <atom:link href="http://boxcounter.com/tags/android/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>RefBase::weakref_type::attemptIncStrong的理解</title>
-      <link>http://boxcounter.com/technique/2015-09-05-weakref_type/</link>
+      <link>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</link>
       <pubDate>Sat, 05 Sep 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type/</guid>
+      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</guid>
       <description>&lt;p&gt;见中文注释内容：&lt;/p&gt;
 
 &lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)

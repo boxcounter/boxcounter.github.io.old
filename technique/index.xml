@@ -1,9 +1,9 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Technique-rsses on Boxcounter的烂笔头</title>
+    <title>Techniques on Boxcounter的烂笔头</title>
     <link>http://boxcounter.com/technique/index.xml</link>
-    <description>Recent content in Technique-rsses on Boxcounter的烂笔头</description>
+    <description>Recent content in Techniques on Boxcounter的烂笔头</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>zh-cn</language>
     <lastBuildDate>Sat, 26 Nov 2016 00:00:00 +0000</lastBuildDate>
@@ -90,10 +90,10 @@ sudo ./init.sh
     
     <item>
       <title>macOS tar的特殊行为</title>
-      <link>http://boxcounter.com/technique/2016-11-26-macOS%20tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</link>
+      <link>http://boxcounter.com/technique/2016-11-26-macOS-tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</link>
       <pubDate>Sat, 26 Nov 2016 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2016-11-26-macOS%20tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</guid>
+      <guid>http://boxcounter.com/technique/2016-11-26-macOS-tar%E7%9A%84%E7%89%B9%E6%AE%8A%E8%A1%8C%E4%B8%BA/</guid>
       <description>&lt;p&gt;这周在编写自动部署脚本的过程遇到一个有趣的问题 —— 我把脚本打包成tgz文件，然后scp到被部署服务器上。解压之后发现多出来好些隐藏文件。比如下面的行1和行3：&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;$ ls ./init/letsencrypt/keys/
@@ -142,10 +142,10 @@ total 56
     
     <item>
       <title>RefBase::weakref_type::attemptIncStrong的理解</title>
-      <link>http://boxcounter.com/technique/2015-09-05-weakref_type/</link>
+      <link>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</link>
       <pubDate>Sat, 05 Sep 2015 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type/</guid>
+      <guid>http://boxcounter.com/technique/2015-09-05-weakref_type.attemptIncStrong/</guid>
       <description>&lt;p&gt;见中文注释内容：&lt;/p&gt;
 
 &lt;div class=&#34;highlight&#34; style=&#34;background: #ffffff&#34;&gt;&lt;pre style=&#34;line-height: 125%&#34;&gt;&lt;span&gt;&lt;/span&gt;&lt;span style=&#34;color: #2b91af&#34;&gt;bool&lt;/span&gt; RefBase::weakref_type::attemptIncStrong(&lt;span style=&#34;color: #0000ff&#34;&gt;const&lt;/span&gt; &lt;span style=&#34;color: #2b91af&#34;&gt;void&lt;/span&gt;* id)
@@ -814,10 +814,10 @@ total 56
     
     <item>
       <title>linux、osx下搭建操作系统开发环境 v1.1</title>
-      <link>http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1/</link>
+      <link>http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1.1/</link>
       <pubDate>Thu, 14 Nov 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1/</guid>
+      <guid>http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1.1/</guid>
       <description>
 
 &lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;
@@ -1267,10 +1267,10 @@ Path `/tmp/antos/boot/grub&#39; is not readable by GRUB on boot. Installation is
     
     <item>
       <title>osx下搭建操作系统开发环境之64位交叉开发工具集（gcc&#43;gdb）v1.0</title>
-      <link>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1/</link>
+      <link>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.0/</link>
       <pubDate>Fri, 08 Nov 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1/</guid>
+      <guid>http://boxcounter.com/technique/2013-11-08-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B64%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.0/</guid>
       <description>
 
 &lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;
@@ -1416,10 +1416,10 @@ Remote debugging using localhost:1234
     
     <item>
       <title>osx下搭建操作系统开发环境之构建bochs v1.0</title>
-      <link>http://boxcounter.com/technique/2013-11-05-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B%E6%9E%84%E5%BB%BAbochs_v1/</link>
+      <link>http://boxcounter.com/technique/2013-11-05-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B%E6%9E%84%E5%BB%BAbochs_v1.0/</link>
       <pubDate>Tue, 05 Nov 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2013-11-05-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B%E6%9E%84%E5%BB%BAbochs_v1/</guid>
+      <guid>http://boxcounter.com/technique/2013-11-05-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B%E6%9E%84%E5%BB%BAbochs_v1.0/</guid>
       <description>
 
 &lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;
@@ -1515,10 +1515,10 @@ export PREFIX=/Users/boxcounter/opt/bochs-gdb
     
     <item>
       <title>osx下搭建操作系统开发环境之32位交叉开发工具集（gcc&#43;gdb）v1.1</title>
-      <link>http://boxcounter.com/technique/2013-09-07-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1/</link>
+      <link>http://boxcounter.com/technique/2013-09-07-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.1/</link>
       <pubDate>Mon, 04 Nov 2013 00:00:00 +0000</pubDate>
       
-      <guid>http://boxcounter.com/technique/2013-09-07-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1/</guid>
+      <guid>http://boxcounter.com/technique/2013-09-07-osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83%E4%B9%8B32%E4%BD%8D%E4%BA%A4%E5%8F%89%E5%BC%80%E5%8F%91%E5%B7%A5%E5%85%B7%E9%9B%86%EF%BC%88gcc&#43;gdb%EF%BC%89v1.1/</guid>
       <description>
 
 &lt;h1 id=&#34;一-前言&#34;&gt;一、前言&lt;/h1&gt;

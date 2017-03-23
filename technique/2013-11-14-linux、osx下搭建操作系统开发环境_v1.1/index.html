@@ -26,7 +26,11 @@
               <a class="dropdown-toggle" data-toggle="dropdown" href="#" id="sections">Sections<span class="caret"></span></a>
               <ul class="dropdown-menu" aria-labelledby="download">
               
+                <li><a href="/"></a></li>
+              
                 <li><a href="/essay">essay</a></li>
+              
+                <li><a href="/reading">reading</a></li>
               
                 <li><a href="/technique">technique</a></li>
               
@@ -39,13 +43,34 @@
 
 
     <div class="container">
-        <h1><a href="http://localhost:1313/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1.1/">linux、osx下搭建操作系统开发环境 v1.1</a></h1>
+        <h1><a href="http://boxcounter.com/technique/2013-11-14-linux%E3%80%81osx%E4%B8%8B%E6%90%AD%E5%BB%BA%E6%93%8D%E4%BD%9C%E7%B3%BB%E7%BB%9F%E5%BC%80%E5%8F%91%E7%8E%AF%E5%A2%83_v1.1/">linux、osx下搭建操作系统开发环境 v1.1</a></h1>
         <hr />
         <span class="post-time">2013-11-14</span>
+
+        
+            <div id="toc" class="well">
+                <nav id="TableOfContents">
+<ul>
+<li><a href="#一-前言">一、前言</a></li>
+<li><a href="#二-创建虚拟磁盘-并分区">二、创建虚拟磁盘，并分区</a></li>
+<li><a href="#三-安装grub2到虚拟磁盘">三、安装grub2到虚拟磁盘</a></li>
+<li><a href="#四-在bochs中使用虚拟磁盘">四、在bochs中使用虚拟磁盘</a></li>
+<li><a href="#五-编写最简单的系统内核">五、编写最简单的系统内核</a></li>
+<li><a href="#六-使用grub2启动自行编写的操作系统内核">六、使用grub2启动自行编写的操作系统内核</a></li>
+<li><a href="#七-osx中读写ext2文件系统的虚拟磁盘">七、osx中读写ext2文件系统的虚拟磁盘</a></li>
+<li><a href="#八-附录一-x64-ubuntu-12-04-2中执行grub-install遇到的问题">八、附录一：x64 ubuntu 12.04.2中执行grub-install遇到的问题</a></li>
+<li><a href="#九-附录二-创建虚拟磁盘分区的另外一种方法-losetup">九、附录二：创建虚拟磁盘分区的另外一种方法（losetup）</a></li>
+<li><a href="#十-主要参考资料">十、主要参考资料</a></li>
+<li><a href="#十一-版本记录">十一、版本记录</a></li>
+</ul>
+</nav>
+            </div>
+        
+
         <div class="post">
             
 
-<h1 id="一-前言:31a30a92cbf0de02e916cc20c8b8ad92">一、前言</h1>
+<h1 id="一-前言">一、前言</h1>
 
 <p>　　本文档记录的内容既适用于x86也适用于x64，只是对于后者有一些环境要求。<br />
 　　之前开发使用的方法是：自己的引导代码+虚拟软盘。优点是搭建简单，所有代码都是自己编写，可控性强。最近想试试使用grub的引导功能，于是花了些时间琢磨。搜出来的相​关资料有不少，但是要么是grub1的，要么太过零散，要么描述太过简略。总之，没有一篇文章详细的讲述整个配置过程。所以我就在搭建的过程中顺手整理了这么一篇完整的、​完全从零开始的方法，其中每一步都有较丰富的说明。<br />
@@ -63,7 +88,7 @@
 <p>　　如果同好使用的环境不一样，可能需要根据情况自行调整一些细节。<br />
 　　另外，本文提供的命令在显示时候可能会自动折行，所以复制到剪贴板中之后（在折行处）可能会有多余的空格，请同好自行删减。</p>
 
-<h1 id="二-创建虚拟磁盘-并分区:31a30a92cbf0de02e916cc20c8b8ad92">二、创建虚拟磁盘，并分区</h1>
+<h1 id="二-创建虚拟磁盘-并分区">二、创建虚拟磁盘，并分区</h1>
 
 <p>　　首先说明：<br />
 　　这里的目标磁盘的属性是：16 headers, 63 sectors per track, 512 bytes per sector。意味着每一个cylinder的大小是516096bytes（16 * 63 * 512）。<br />
@@ -91,18 +116,14 @@ Building a new DOS disklabel with disk identifier 0x136d49ee.
 Changes will remain in memory only, until you decide to write them.
 After that, of course, the previous content won't be recoverable.
 
-
 Warning: invalid flag 0x0000 of partition table 4 will be corrected by w(rite)
-
 
 Command (m for help): o &lt;&lt;&lt;=== Create a new empty DOS partition table
 Building a new DOS disklabel with disk identifier 0x5bd665d5.
 Changes will remain in memory only, until you decide to write them.
 After that, of course, the previous content won't be recoverable.
 
-
 Warning: invalid flag 0x0000 of partition table 4 will be corrected by w(rite)
-
 
 Command (m for help): n &lt;&lt;&lt;=== Create a new partition
 Partition type:
@@ -115,13 +136,10 @@ Using default value 2048
 Last sector, +sectors or +size{K,M,G} (2048-20159, default 20159): &lt;&lt;&lt;=== 回车
 Using default value 20159
 
-
 Command (m for help): a &lt;&lt;&lt;=== Toggle the bootable flag (Optional)
 Partition number (1-4): 1 &lt;&lt;&lt;=== 分区1
 
-
 Command (m for help): p &lt;&lt;&lt;=== Print the partition table.
-
 
 Disk /dev/loop0: 10 MB, 10321920 bytes
 16 heads, 63 sectors/track, 20 cylinders, total 20160 sectors
@@ -130,18 +148,14 @@ Sector size (logical/physical): 512 bytes / 512 bytes
 I/O size (minimum/optimal): 512 bytes / 512 bytes
 Disk identifier: 0x5bd665d5
 
-
 Device Boot      Start         End      Blocks   Id  System
 /dev/loop0p1   *        2048       20159        9056   83  Linux
 &lt;&lt;&lt;=== 如果使用附录2记录的方法，需要记录Start和Blocks的值，本例子中分别是2048和9056。
 
-
 Command (m for help): w &lt;&lt;&lt;=== Write partition table to our 'disk' and exit
 The partition table has been altered!
 
-
 Calling ioctl() to re-read partition table.
-
 
 WARNING: Re-reading the partition table failed with error 22: Invalid argument.
 The kernel still uses the old table. The new table will be used at
@@ -170,7 +184,7 @@ Syncing disks.
 如果前面的步骤都成功，会看到名为“lost+found”的目录，说明磁盘和分区都正确的创建了。</p></li>
 </ol>
 
-<h1 id="三-安装grub2到虚拟磁盘:31a30a92cbf0de02e916cc20c8b8ad92">三、安装grub2到虚拟磁盘</h1>
+<h1 id="三-安装grub2到虚拟磁盘">三、安装grub2到虚拟磁盘</h1>
 
 <p>　　假设磁盘挂载到设备“/dev/loop0”上，分区挂载到“/tmp/antos”目录下。</p>
 
@@ -181,7 +195,7 @@ Syncing disks.
 　　如果使用的系统是x64架构的，需要使用新一些的系统，比如ubuntu 13.10。具体原因请参考附录一。<br />
 　　（在fedora等redhat系中使用的名称是“grub2-install”）</p>
 
-<h1 id="四-在bochs中使用虚拟磁盘:31a30a92cbf0de02e916cc20c8b8ad92">四、在bochs中使用虚拟磁盘</h1>
+<h1 id="四-在bochs中使用虚拟磁盘">四、在bochs中使用虚拟磁盘</h1>
 
 <ol>
 <li><p>确认虚拟磁盘的属性。<br />
@@ -210,7 +224,6 @@ Syncing disks.
 5. Restore the Bochs state from...
 6. Begin simulation
 7. Quit now
-
 
 Please choose one: [2]
 </code></pre>
@@ -264,9 +277,9 @@ Please choose one: [2]
 
 <p>　　<img src="/images/2013-11-14/grub-cmdline.png"/></p>
 
-<h1 id="五-编写最简单的系统内核:31a30a92cbf0de02e916cc20c8b8ad92">五、编写最简单的系统内核</h1>
+<h1 id="五-编写最简单的系统内核">五、编写最简单的系统内核</h1>
 
-<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span style="border: 1px solid #FF0000">//</span> kernel.asm<span style="border: 1px solid #FF0000">源码</span>
+<p><div class="highlight" style="background: #ffffff"><pre style="line-height: 125%"><span></span><span style="border: 1px solid #FF0000">//</span> kernel.asm<span style="border: 1px solid #FF0000">源码</span>
 <span style="border: 1px solid #FF0000">[</span><span style="color: #0000ff">section</span> .kernel]
 <span style="border: 1px solid #FF0000">[</span><span style="color: #0000ff">bits</span> 32]
 
@@ -332,7 +345,7 @@ jmp <span style="color: #0000ff">$</span>
 <p>　　编译过程中可能会报警告，无视它。<br />
 　　将虚拟磁盘挂载到某个目录，然后将kernel.bin拷贝到分区的根目录，即和/boot目录同一层目录。</p>
 
-<h1 id="六-使用grub2启动自行编写的操作系统内核:31a30a92cbf0de02e916cc20c8b8ad92">六、使用grub2启动自行编写的操作系统内核</h1>
+<h1 id="六-使用grub2启动自行编写的操作系统内核">六、使用grub2启动自行编写的操作系统内核</h1>
 
 <p>　　假设分区挂载到“/tmp/antos”目录下，那么创建grub需要的配置文件“/tmp/antos/boot/grub/grub.cfg”，将以下几行文本贴进去：</p>
 
@@ -363,7 +376,7 @@ Next at t=449811185
 
 <p>　　ok，整个配置过程就完毕了，整个过程都是在linux中完成的。使用fat32的osx同好可以使用类似的方法来完成。整个过程每一步的功能都写的很清楚了，看到这里理​理思路应该就明白整个流程了。</p>
 
-<h1 id="七-osx中读写ext2文件系统的虚拟磁盘:31a30a92cbf0de02e916cc20c8b8ad92">七、osx中读写ext2文件系统的虚拟磁盘</h1>
+<h1 id="七-osx中读写ext2文件系统的虚拟磁盘">七、osx中读写ext2文件系统的虚拟磁盘</h1>
 
 <p>　　最后说说osx相关的内容，因为我不想每次做开发的时候都需要开个linux虚拟机。以下是在osx下读写虚拟磁盘的方法，比如更新的kernel.bin等等。linu​xer可以无视这一步。</p>
 
@@ -435,7 +448,7 @@ fuse-ext2默认只能以只读方式挂载设备，所以需要进行以下修�
 <p>（注意是磁盘设备，不是分区设备disk1s1）。</p></li>
 </ol>
 
-<h1 id="八-附录一-x64-ubuntu-12-04-2中执行grub-install遇到的问题:31a30a92cbf0de02e916cc20c8b8ad92">八、附录一：x64 ubuntu 12.04.2中执行grub-install遇到的问题</h1>
+<h1 id="八-附录一-x64-ubuntu-12-04-2中执行grub-install遇到的问题">八、附录一：x64 ubuntu 12.04.2中执行grub-install遇到的问题</h1>
 
 <p>　　我在x64 ubuntu 12.04.2中执行“安装grub2到虚拟磁盘”操作时总是失败，如下：</p>
 
@@ -457,7 +470,7 @@ Path `/tmp/antos/boot/grub' is not readable by GRUB on boot. Installation is imp
 
 <p>　　我查阅了很多资料，都没有明确的解决方案。经过了约莫20个小时的摸索，最终发现只需要使用新版本的系统自带的grub 2.0.0即可。（注：x64 ubuntu 12.04.2中的grub2是我源码编译的2.0.0版，也尝试过使用trunk源码编译或者使用系统自带的1.99，都会报错。）</p>
 
-<h1 id="九-附录二-创建虚拟磁盘分区的另外一种方法-losetup:31a30a92cbf0de02e916cc20c8b8ad92">九、附录二：创建虚拟磁盘分区的另外一种方法（losetup）</h1>
+<h1 id="九-附录二-创建虚拟磁盘分区的另外一种方法-losetup">九、附录二：创建虚拟磁盘分区的另外一种方法（losetup）</h1>
 
 <p>　　需要说明，这种方法较前面介绍的使用kpartx的方法要繁琐，所以并不推荐（特别是如果要使用多分区）。补充在这里的原因是我最开始搜索到的资料使用的就是losetu​p工具，摸索成功之后才发现kpartx。<br />
 　　另外，操作过程中有部分步骤和前面讲述的步骤一样，所以省略了那些步骤的说明。</p>
@@ -483,7 +496,7 @@ Path `/tmp/antos/boot/grub' is not readable by GRUB on boot. Installation is imp
 卸载目录和设备。</li>
 </ol>
 
-<h1 id="十-主要参考资料:31a30a92cbf0de02e916cc20c8b8ad92">十、主要参考资料</h1>
+<h1 id="十-主要参考资料">十、主要参考资料</h1>
 
 <ul>
 <li>The Multiboot Specification</li>
@@ -491,7 +504,7 @@ Path `/tmp/antos/boot/grub' is not readable by GRUB on boot. Installation is imp
 <li>Mac OS X下读写ext2/ext3文件系统</li>
 </ul>
 
-<h1 id="十一-版本记录:31a30a92cbf0de02e916cc20c8b8ad92">十一、版本记录</h1>
+<h1 id="十一-版本记录">十一、版本记录</h1>
 
 <ul>
 <li>v1.0 - 2013-09-02，初始发布。</li>
@@ -512,10 +525,7 @@ Path `/tmp/antos/boot/grub' is not readable by GRUB on boot. Installation is imp
         <script src="https://code.jquery.com/jquery-1.10.2.min.js"></script>
         <script src="/js/bootstrap.min.js"></script>
         <script src="/js/bootswatch.js"></script>
-    <script data-no-instant>document.write('<script src="http://'
-        + (location.host || 'localhost').split(':')[0]
-		+ ':1313/livereload.js?mindelay=10"></'
-        + 'script>')</script></body>
+    </body>
 </html>
 
 
