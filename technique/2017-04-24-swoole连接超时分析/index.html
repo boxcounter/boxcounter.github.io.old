@@ -54,7 +54,7 @@
 
 <p>我们的产品中使用<a href="http://www.swoole.com/">Swoole</a>来构建长连接服务，用于C/S之间的实时数据交互。同时也编写了一个监控程序monitor来定时检查长连接服务的可用性。结构是这样的：</p>
 
-<p><img src="/images/2017-04-24/1.png" width="600"/></p>
+<p><img src="/images/2017-04-24/1.png" width="480"/></p>
 
 <p>不知从什么时候起，每天都会收到几封报警邮件，关键信息是这样的：</p>
 
@@ -137,18 +137,18 @@
 <p>monitor发送的那段内容，也就是报文6中的<code>Continuation</code>，的值是88:02:03:e8。查阅<a href="https://tools.ietf.org/html/rfc6455#section-7.4">RFC 6455</a>，得知其含义是「正常关闭」：</p>
 
 <blockquote>
-<p>The Close frame MAY contain a body (the &ldquo;Application data&rdquo; portion of
-the frame) that indicates a reason for closing, such as an endpoint
-shutting down, an endpoint having received a frame too large, or an
-endpoint having received a frame that does not conform to the format
-expected by the endpoint.  If there is a body, the first two bytes of
-the body MUST be a 2-byte unsigned integer (in network byte order)
-representing a status code with value /code/ defined in Section 7.4.
-Following the 2-byte integer, the body MAY contain UTF-8-encoded data
-with value /reason/, the interpretation of which is not defined by
+<p>The Close frame MAY contain a body (the &ldquo;Application data&rdquo; portion of<br />
+the frame) that indicates a reason for closing, such as an endpoint<br />
+shutting down, an endpoint having received a frame too large, or an<br />
+endpoint having received a frame that does not conform to the format<br />
+expected by the endpoint.  If there is a body, the first two bytes of<br />
+the body MUST be a 2-byte unsigned integer (in network byte order)<br />
+representing a status code with value /code/ defined in Section 7.4.<br />
+Following the 2-byte integer, the body MAY contain UTF-8-encoded data<br />
+with value /reason/, the interpretation of which is not defined by<br />
 this specification.</p>
 
-<p>1000 indicates a normal closure, meaning that the purpose for which
+<p>1000 indicates a normal closure, meaning that the purpose for which<br />
 the connection was established has been fulfilled.</p>
 </blockquote>
 
@@ -192,14 +192,16 @@ the connection was established has been fulfilled.</p>
 
 <h1 id="七-附录">七、附录</h1>
 
-<pre><code class="language-使用netstat查看系统的TCP连接情况">OUTPUT=/tmp/nst.log
+<pre><code class="language-bash"># 使用netstat查看系统的TCP连接情况
+OUTPUT=/tmp/nst.log
 echo -n $( date &quot;+%Y-%m-%d_%H:%M:%S&quot; ) &gt;&gt; $OUTPUT
 echo -n &quot; &quot; &gt;&gt; $OUTPUT
 netstat -n | awk 'BEGIN { OFS = &quot; &quot;; ORS = &quot; &quot; } /^tcp/ {++y[$NF]} END {for(w in y) print w, y[w]}' &gt;&gt; $OUTPUT
 echo &quot;&quot; &gt;&gt; $OUTPUT
 </code></pre>
 
-<pre><code class="language-使用netstat查看指定进程的TCP连接情况（记得要把第四行中的{keyword}换成进程的关键字）">OUTPUT=/tmp/swcc.log
+<pre><code class="language-bash"># 使用netstat查看指定进程的TCP连接情况（记得要把第四行中的{keyword}换成进程的关键字）
+OUTPUT=/tmp/swcc.log
 echo -n $( date &quot;+%Y-%m-%d_%H:%M:%S&quot; ) &gt;&gt; $OUTPUT
 echo -n &quot; &quot; &gt;&gt; $OUTPUT
 echo -n $( netstat -nutp | grep '{keyword} | wc -l ) &gt;&gt; $OUTPUT
